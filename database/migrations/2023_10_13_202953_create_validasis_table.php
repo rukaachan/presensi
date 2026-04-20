@@ -15,7 +15,7 @@ return new class extends Migration
             $table->integer('id_validasi', true);
             $table->integer('id_pengurus')->nullable(true);
             $table->integer('id_presensi');
-            $table->enum('status_validasi', ['hadir', 'izin', 'alpha', 'pulang','tidak_ada'])->default('tidak_ada');
+            $table->enum('status_validasi', ['hadir', 'izin', 'alpha', 'pulang', 'tidak_ada'])->default('tidak_ada');
             $table->enum('waktu_validasi', ['istirahat_pertama', 'istirahat_kedua', 'istirahat_ketiga']);
 
             // Foreign Key

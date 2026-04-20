@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Faker\Factory as Faker;
-use Illuminate\Support\Arr;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class GuruSeeder extends Seeder
@@ -23,9 +23,9 @@ class GuruSeeder extends Seeder
             for ($i = 1; $i <= 5; $i++) {
                 DB::table('guru')->insert([
                     'id_akun' => Arr::random(['7', '8', '9', '10', '11', '12']),
-                    'nama_guru' => $faker->name(). Arr::random(['S.Pd', 'S.Kom']),
+                    'nama_guru' => $faker->name().Arr::random(['S.Pd', 'S.Kom']),
                     'foto_guru' => 'guru.jpg',
-                    'pembuat' => 'Tata Usaha'
+                    'pembuat' => 'Tata Usaha',
                 ]);
             }
         }

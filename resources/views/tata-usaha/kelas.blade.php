@@ -4,36 +4,36 @@
     <nav id="sidebarMenu" class="d-lg-block sidebar collapse bg-white">
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="/tata-usaha/dashboard"
+                <a href="{{ route('tata-usaha.dashboard') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Home.svg') }}" alt=""><span>Dashboard</span>
                 </a>
-                <a href="/tata-usaha/jurusan"
+                <a href="{{ route('tata-usaha.jurusan.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Jurusan.svg') }}" alt=""><span>Jurusan</span>
                 </a>
-                <a href="/tata-usaha/kelas?filter_status=aktif"
+                <a href="{{ route('tata-usaha.kelas.index', ['filter_status' => 'aktif']) }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active"
                     aria-current="true">
                     <img src="{{ asset('img/icon_Kelas_White.svg') }}" alt=""><span>Kelas</span>
                 </a>
-                <a href="/tata-usaha/akun-guru"
+                <a href="{{ route('tata-usaha.guru.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg') }}" alt=""><span>Guru</span>
                 </a>
-                <a href="/tata-usaha/akun-pengurus-kelas"
+                <a href="{{ route('tata-usaha.pengurus-kelas.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg') }}" alt=""><span>Pengurus Kelas</span>
                 </a>
-                <a href="/tata-usaha/akun-siswa?filter_status=aktif"
+                <a href="{{ route('tata-usaha.siswa.index', ['filter_status' => 'aktif']) }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg') }}" alt=""><span>Siswa</span>
                 </a>
-                <a href="/tata-usaha/presensi"
+                <a href="{{ route('tata-usaha.presensi.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Location.svg') }}" alt=""><span>Presensi</span>
                 </a>
-                <a href="/tata-usaha/logs"
+                <a href="{{ route('tata-usaha.logs.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Book.svg') }}" alt=""><span>Logs</span>
                 </a>
@@ -113,10 +113,10 @@
                         <td>{{ $k->nama_kelas }}</td>
                         <td>{{ $k->status_kelas }}</td>
                         <td class="d-flex justify-content-center gap-2">
-                            <a href="/tata-usaha/detail-kelas/{{ $k->id_kelas }}">
+                            <a href="{{ route('tata-usaha.kelas.detail', ['id' => $k->id_kelas]) }}">
                                 <img src="{{ asset('img/icon_Vector.svg') }}" alt="">
                             </a>
-                            <a href="/tata-usaha/edit-kelas/{{ $k->id_kelas }}">
+                            <a href="{{ route('tata-usaha.kelas.edit', ['id' => $k->id_kelas]) }}">
                                 <img src="{{ asset('img/icon_Edit.svg') }}" alt="">
                             </a>
                             <button class="btnHapus" idHapus="{{ $k->id_kelas }}">

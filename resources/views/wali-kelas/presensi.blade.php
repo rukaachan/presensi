@@ -80,7 +80,7 @@
             <tbody>
                 @foreach ($presensi as $p)
                     <tr>
-                        <td>{{ $loop->index + 1 }}</td>
+                        <td>{{ ($presensi->currentPage() - 1) * $presensi->perPage() + $loop->iteration }}</td>
                         <td>{{ $p->nis }}</td>
                         <td>{{ $p->nama_siswa }}</td>
                         <td>{{ $p->tanggal }}</td>
@@ -94,12 +94,12 @@
                         <td>
                             <div class="row py-2">
                                 <div class="col-6" style="padding: 0px 0px 0px 20px">
-                                    <a href="/wali-kelas/detail-presensi-siswa/{{ $p->id_presensi }}">
+                                    <a href="{{ route('wali-kelas.presensi-siswa.edit', ['id' => $p->id_presensi]) }}">
                                         <img src="{{ asset('img/icon_Vector.svg') }}" alt="">
                                     </a>
                                 </div>
                                 <div class="col-6" style="padding: 0px 0px 0px 7px">
-                                    <a href="/wali-kelas/edit-presensi-siswa/{{ $p->id_presensi }}">
+                                    <a href="{{ route('wali-kelas.presensi-siswa.edit', ['id' => $p->id_presensi]) }}">
                                         <img src="{{ asset('img/icon_Edit.svg') }}" alt="">
                                     </a>
                                 </div>
@@ -109,6 +109,7 @@
                 @endforeach
             </tbody>
         </table>
+        {{ $presensi->links('pagination::bootstrap-5') }}
 
     </div>
 

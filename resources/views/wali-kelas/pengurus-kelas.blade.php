@@ -85,10 +85,10 @@
                         <th>{{ $i->status_jabatan }}</th>
                         <td>{{ $i->nama_kelas }}</td>
                         <td class="d-flex justify-content-around align-items-center">
-                            <a href="/wali-kelas/detail-siswa-pengurus/{{ $i->id_siswa }}">
+                            <a href="{{ route('wali-kelas.pengurus-kelas.detail-siswa', ['id' => $i->id_siswa]) }}">
                                 <img src="{{ asset('img/icon_Vector.svg') }}" alt="">
                             </a>
-                            <a href="/wali-kelas/edit-pengurus-kelas/{{ $i->id_siswa }}">
+                            <a href="{{ route('wali-kelas.pengurus-kelas.edit', ['id' => $i->id_siswa]) }}">
                                 <img src="{{ asset('img/icon_Edit.svg') }}" alt="">
                             </a>
                             <button class="btnHapus" idHapus="{{ $i->id_pengurus }}">

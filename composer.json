@@ -5,23 +5,24 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.1",
-        "barryvdh/laravel-dompdf": "^2.0",
+        "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1.1",
         "guzzlehttp/guzzle": "^7.2",
-        "laravel/framework": "^10.10",
-        "laravel/sanctum": "^3.2",
-        "mckenziearts/laravel-notify": "^2.4"
+        "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.3",
+        "mckenziearts/laravel-notify": "^2.7"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.9",
+        "barryvdh/laravel-debugbar": "^3.15.4",
         "fakerphp/faker": "^1.9.1",
+        "larastan/larastan": "^3.1",
         "laravel/pint": "^1.0",
-        "laravel/sail": "^1.18",
-        "laravel/ui": "^4.2",
+        "laravel/sail": "^1.52",
+        "laravel/ui": "^4.6.1",
         "mockery/mockery": "^1.4.4",
-        "nunomaduro/collision": "^7.0",
-        "phpunit/phpunit": "^10.1",
-        "spatie/laravel-ignition": "^2.0"
+        "nunomaduro/collision": "^8.6",
+        "phpunit/phpunit": "^11.5.3",
+        "spatie/laravel-ignition": "^2.9.1"
     },
     "autoload": {
         "psr-4": {
@@ -36,6 +37,19 @@
         }
     },
     "scripts": {
+        "format": [
+            "@php ./vendor/bin/pint"
+        ],
+        "lint:format": [
+            "@php ./vendor/bin/pint --test"
+        ],
+        "lint:types": [
+            "@php ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G"
+        ],
+        "lint": [
+            "@composer lint:format",
+            "@composer lint:types"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

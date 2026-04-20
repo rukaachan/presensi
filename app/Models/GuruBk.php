@@ -9,9 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class GuruBk extends Model
 {
     use HasFactory;
+
     protected $table = 'guru_bk';
+
     protected $fillable = ['id_guru'];
+
     protected $primaryKey = 'id_bk';
+
     public $timestamps = false;
 
     // One to One

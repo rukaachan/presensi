@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class SiswaSeeder extends Seeder
 {
@@ -16,9 +15,9 @@ class SiswaSeeder extends Seeder
     public function run(): void
     {
         $faker = Faker::create('id_ID');
-    
+
         $datas = [1, 2, 3, 4, 5, 6];
-    
+
         foreach ($datas as $data) {
             for ($i = 1; $i <= 1; $i++) {
                 DB::table('siswa')->insert([
@@ -32,7 +31,7 @@ class SiswaSeeder extends Seeder
                     'status_siswa' => 'aktif',
                     'status_jabatan' => Arr::random(['sekretaris', 'ketua_kelas', 'wakil_kelas', 'bendahara', 'siswa']),
                     'foto_siswa' => 'siswa.jpg',
-                    'pembuat' =>  'Tata Usaha'
+                    'pembuat' => 'Tata Usaha',
                 ]);
             }
         }

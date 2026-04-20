@@ -15,15 +15,15 @@
     <nav id="sidebarMenu" class="collapse d-lg-block sidebar bg-white">
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="/siswa/dashboard" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4"
+                <a href="{{ route('siswa.dashboard') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4"
                     aria-current="true">
                     <img src="{{ asset('img/icon_Home.svg') }}" alt=""><span>Dashboard</span>
                 </a>
-                <a href="/siswa/presensi" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4"
+                <a href="{{ route('siswa.presensi.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4"
                     aria-current="true">
                     <img src="{{ asset('img/icon_Location.svg') }}" alt=""><span>Presensi</span>
                 </a>
-                <a href="/siswa/histori"
+                <a href="{{ route('siswa.histori.index') }}"
                     class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
                     <img src="{{ asset('img/icon_Location_White.svg') }}"><span>Histori</span>
                 </a>

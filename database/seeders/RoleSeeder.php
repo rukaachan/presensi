@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class RoleSeeder extends Seeder
 {
@@ -21,11 +20,11 @@ class RoleSeeder extends Seeder
             'Guru BK',
             'Tata Usaha',
         ];
-        
+
         foreach ($roles as $role) {
             DB::table('role_akun')->insert([
                 'nama_role' => $role,
             ]);
-        }        
+        }
     }
 }

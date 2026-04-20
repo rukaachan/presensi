@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('guru_bk', function (Blueprint $table) {
             $table->integer('id_bk', true);
-            $table->integer('id_guru');     
+            $table->integer('id_guru');
 
             // Foreign Key
 

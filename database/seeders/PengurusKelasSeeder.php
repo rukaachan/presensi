@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Arr;
 
 class PengurusKelasSeeder extends Seeder
 {
@@ -23,7 +21,7 @@ class PengurusKelasSeeder extends Seeder
                     'id_siswa' => $data,
                     // 'id_kelas' => $data,
                     'jabatan' => 'Pengurus Kelas',
-                    'pembuat' =>  'Tata Usaha'
+                    'pembuat' => 'Tata Usaha',
                 ]);
             }
         }

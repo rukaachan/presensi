@@ -85,12 +85,12 @@
                         <td>
                             <div class="row py-2">
                                 <div class="col-6" style="padding: 0px 0px 0px 20px">
-                                    <a href="/wali-kelas/detail-siswa/{{ $i->id_siswa }}">
+                                    <a href="{{ route('wali-kelas.siswa.detail', ['id' => $i->id_siswa]) }}">
                                         <img src="{{ asset('img/icon_Vector.svg') }}" alt="">
                                     </a>
                                 </div>
                                 <div class="col-6" style="padding: 0px 0px 0px 7px">
-                                    <a href="/wali-kelas/edit-siswa/{{ $i->id_siswa }}">
+                                    <a href="{{ route('wali-kelas.siswa.edit', ['id' => $i->id_siswa]) }}">
                                         <img src="{{ asset('img/icon_Edit.svg') }}" alt="">
                                     </a>
                                 </div>

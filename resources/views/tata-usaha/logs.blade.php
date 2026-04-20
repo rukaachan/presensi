@@ -4,28 +4,28 @@
     <nav id="sidebarMenu" class=" d-lg-block sidebar collapse bg-white">
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="/tata-usaha/dashboard" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
+                <a href="{{ route('tata-usaha.dashboard') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Home.svg')}}" alt=""><span>Dashboard</span>
                 </a>
-                <a href="/tata-usaha/jurusan" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
+                <a href="{{ route('tata-usaha.jurusan.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Jurusan.svg')}}" alt=""><span>Jurusan</span>
                 </a>
-                <a href="/tata-usaha/kelas?filter_status=aktif" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
+                <a href="{{ route('tata-usaha.kelas.index', ['filter_status' => 'aktif']) }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Kelas.svg')}}" alt=""><span>Kelas</span>
                 </a>
-                <a href="/tata-usaha/akun-guru" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
+                <a href="{{ route('tata-usaha.guru.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg')}}" alt=""><span>Guru</span>
                 </a>
-                <a href="/tata-usaha/akun-pengurus-kelas" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
+                <a href="{{ route('tata-usaha.pengurus-kelas.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg')}}" alt=""><span>Pengurus Kelas</span>
                 </a>
-                <a href="/tata-usaha/akun-siswa?filter_status=aktif" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
+                <a href="{{ route('tata-usaha.siswa.index', ['filter_status' => 'aktif']) }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Profile.svg')}}" alt=""><span>Siswa</span>
                 </a>
-                <a href="/tata-usaha/presensi" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
+                <a href="{{ route('tata-usaha.presensi.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
                     <img src="{{ asset('img/icon_Location.svg')}}" alt=""><span>Presensi</span>
                 </a>
-                <a href="/tata-usaha/logs" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4  active">
+                <a href="{{ route('tata-usaha.logs.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4  active">
                     <img src="{{ asset('img/icon_Book_White.svg')}}" alt=""><span>Logs</span>
                 </a>
             </div>

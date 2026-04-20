@@ -4,57 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Models\Akun;
 use App\Models\Guru;
-use App\Models\Logs;
-use App\Models\Role;
 use App\Models\Kelas;
-use App\Models\Siswa;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use App\Models\Logs;
 use App\Models\PengurusKelas;
 use App\Models\PresensiSiswa;
+use App\Models\Role;
+use App\Models\Siswa;
+use App\Services\PresensiFilterService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class WaliKelasController extends Controller
 {
+    public function __construct(private PresensiFilterService $presensiFilterService)
+    {
+    }
     public function index()
     {
         $user = Auth::user()->id_akun;
 
-        $totalSiswa = DB::table('siswa')
-            ->select(DB::raw('COUNT(*) as totalSiswa'))
-            ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
+        $totalSiswa = Siswa::query()
+            ->selectRaw('COUNT(*) as totalSiswa')
+            ->joinKelasGuruWali()
             ->where('guru.id_akun', $user)
             ->value('totalSiswa');
 
-        $totalHadir = DB::table('presensi_siswa')
-            ->select(DB::raw('COUNT(*) as totalHadir'))
-            ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
-            ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
-            ->where('presensi_siswa.status_kehadiran', '=', 'Hadir')
+        $attendanceStats = PresensiSiswa::query()
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalHadir', ['Hadir'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalIzin', ['Izin'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalAlpha', ['Alpha'])
+            ->joinSiswaKelasGuruWali()
             ->where('guru.id_akun', $user)
-            ->value('totalHadir');
+            ->first();
 
-        $totalIzin = DB::table('presensi_siswa')
-            ->select(DB::raw('COUNT(*) as totalIzin'))
-            ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
-            ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
-            ->where('presensi_siswa.status_kehadiran', '=', 'Izin')
-            ->where('guru.id_akun', $user)
-            ->value('totalIzin');
-
-        $totalAlpha = DB::table('presensi_siswa')
-            ->select(DB::raw('COUNT(*) as totalAlpha'))
-            ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
-            ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
-            ->where('presensi_siswa.status_kehadiran', '=', 'Alpha')
-            ->where('guru.id_akun', $user)
-            ->value('totalAlpha');
+        $totalHadir = $attendanceStats->totalHadir ?? 0;
+        $totalIzin = $attendanceStats->totalIzin ?? 0;
+        $totalAlpha = $attendanceStats->totalAlpha ?? 0;
 
         return view('wali-kelas.index', compact('totalSiswa', 'totalHadir', 'totalIzin', 'totalAlpha'));
     }
@@ -63,17 +51,18 @@ class WaliKelasController extends Controller
     {
         $id_guru = $guru->where('id_akun', $request->id)->first()->id_guru;
         $data = [
-            "guru" => $guru
+            'guru' => $guru
                 ->join('akun', 'guru.id_akun', '=', 'akun.id_akun')
                 ->where('id_guru', $id_guru)->first(),
             'kelas' => $kelas
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
                 ->where('id_wali_kelas', $id_guru)
-                ->orderBy('tingkatan')->get()
+                ->orderBy('tingkatan')->get(),
         ];
-        // dd($data);
+
         return view('wali-kelas.detail-profil', $data);
     }
+
     public function showSiswa(Request $request)
     {
         $user = Auth::user()->id_akun;
@@ -90,21 +79,20 @@ class WaliKelasController extends Controller
                     ->orWhere('view_siswa.nama_jurusan', 'LIKE', "%$request->keyword%");
             });
 
-
         if ($request->filter_jenkel != null) {
-            $filter->where("jenis_kelamin", $request->filter_jenkel);
+            $filter->where('jenis_kelamin', $request->filter_jenkel);
         }
 
         if ($request->filter_tingkatan != null) {
-            $filter->where("tingkatan", $request->filter_tingkatan);
+            $filter->where('tingkatan', $request->filter_tingkatan);
         }
 
         if ($request->filter_jurusan != null) {
-            $filter->where("jurusan.id_jurusan", $request->filter_jurusan);
+            $filter->where('jurusan.id_jurusan', $request->filter_jurusan);
         }
 
         $data = [
-            'siswa' => $filter->get(),
+            'siswa' => $filter->simplePaginate(25)->withQueryString(),
         ];
 
         return view('wali-kelas.siswa', $data);
@@ -139,7 +127,7 @@ class WaliKelasController extends Controller
         }
 
         $data = [
-            'pengurus' => $filter->get()
+            'pengurus' => $filter->simplePaginate(25)->withQueryString(),
         ];
 
         return view('wali-kelas.pengurus-kelas', $data);
@@ -147,46 +135,66 @@ class WaliKelasController extends Controller
 
     public function showPresensi(PresensiSiswa $presensi, Request $request)
     {
+        $user = Auth::user()->id_akun;
+        $query = $presensi
+            ->joinSiswaKelasGuruWaliJurusan()
+            ->select(
+                'presensi_siswa.id_presensi',
+                'siswa.nis',
+                'siswa.nama_siswa',
+                'presensi_siswa.tanggal',
+                'kelas.tingkatan',
+                'jurusan.nama_jurusan',
+                'kelas.nama_kelas',
+                'presensi_siswa.status_kehadiran',
+                'presensi_siswa.foto_bukti',
+                'presensi_siswa.keterangan'
+            )
+            ->where('guru.id_akun', $user);
 
-        $filter = $this->filterPresensi($request, $presensi);
+        $filter = $this->presensiFilterService->filter($request, $query, true, [
+            'search_columns' => ['nama_siswa', 'tanggal', 'status_kehadiran', 'nama_kelas'],
+            'month_filter' => null,
+            'kelas_filter' => null,
+        ]);
 
         $data = [
-            'presensi' => $filter
+            'presensi' => $filter,
         ];
+
         return view('wali-kelas.presensi', $data);
     }
 
     public function detailSiswa(Request $request, Kelas $kelas, Siswa $siswa, PengurusKelas $pengurus)
     {
         $data = [
-            "siswa" => $siswa->where('id_siswa', $request->id)
-                ->join("kelas", "siswa.id_kelas", "=", "kelas.id_kelas")
-                ->join("akun", "siswa.id_akun", "=", "akun.id_akun")
+            'siswa' => $siswa->where('id_siswa', $request->id)
+                ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
+                ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
                 ->first(),
-            "kelas" => $kelas
+            'kelas' => $kelas
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
                 ->first(),
             'pengurus' => $pengurus
                 ->join('siswa', 'siswa.id_siswa', '=', 'pengurus_kelas.id_siswa')
                 ->where('siswa.id_siswa', $request->id)
-                ->first()
+                ->first(),
 
         ];
 
-
-        return view('wali-kelas.detail-siswa',  $data);
+        return view('wali-kelas.detail-siswa', $data);
     }
 
     public function detailKelasPengurus(Request $request, Kelas $kelas, Siswa $siswa, PengurusKelas $pengurus)
     {
         $data = [
-            "kelas" => $kelas
+            'kelas' => $kelas
                 ->join('siswa', 'kelas.id_kelas', '=', 'siswa.id_kelas')
                 ->where('kelas.id_kelas', $request->id)
                 ->get(),
         ];
 
-        return view('wali-kelas.detail-pengurus-kelas', $data);
+        return view('wali-kelas.pengurus-kelas', $data);
     }
 
     public function createPengurus(Siswa $siswa)
@@ -195,7 +203,7 @@ class WaliKelasController extends Controller
 
         $data = [
             'siswa' => $siswa
-                ->join("akun", "siswa.id_akun", "=", "akun.id_akun")
+                ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
                 ->select('siswa.id_siswa', 'siswa.nama_siswa', 'akun.id_role')
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
                 ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
@@ -206,7 +214,7 @@ class WaliKelasController extends Controller
                     $query->orWhere('siswa.status_jabatan', '=', 'ketua_kelas')
                         ->orWhere('siswa.status_jabatan', '=', 'wakil_kelas');
                 })
-                ->get()
+                ->get(),
         ];
 
         return view('wali-kelas.tambah-pengurus', $data);
@@ -232,12 +240,12 @@ class WaliKelasController extends Controller
                 ->update(['akun.id_role' => 3]);
 
             notify()->success('Data pengurus kelas telah ditambah', 'Success');
+
             return redirect('wali-kelas/akun-pengurus-kelas')->with('success', 'Data pengurus kelas berhasil ditambah');
         }
 
         return back()->with('error', 'Data pengurus kelas gagal ditambahkan');
     }
-
 
     public function editSiswa(Request $request, Kelas $kelas, Siswa $siswa)
     {
@@ -245,30 +253,30 @@ class WaliKelasController extends Controller
         $statusJabatan = ['sekretaris', 'ketua_kelas', 'wakil_kelas', 'bendahara', 'siswa'];
 
         $data = [
-            "siswa" => $siswa->where('id_siswa', $request->id)
-                ->join("kelas", "siswa.id_kelas", "=", "kelas.id_kelas")
-                ->join("akun", "siswa.id_akun", "=", "akun.id_akun")
+            'siswa' => $siswa->where('id_siswa', $request->id)
+                ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
+                ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
                 ->first(),
-            "kelas" => $kelas
+            'kelas' => $kelas
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
                 ->get(),
             'jenisKelamin' => $jenisKelamin,
-            'statusJabatan' => $statusJabatan
+            'statusJabatan' => $statusJabatan,
 
         ];
-        return view('wali-kelas.edit-siswa',  $data);
-    }
 
+        return view('wali-kelas.edit-siswa', $data);
+    }
 
     public function editPengurus(Request $request, Kelas $kelas, PengurusKelas $pengurus)
     {
         $pengurus = [
-            "pengurus" => $pengurus->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')
+            'pengurus' => $pengurus->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')
                 ->where('id_pengurus', '=', $request->id)
-                ->first()
+                ->first(),
         ];
 
-        return view('wali-kelas.edit-pengurus',  $pengurus);
+        return view('wali-kelas.edit-pengurus', $pengurus);
     }
 
     public function editPresensi(Request $request, Kelas $kelas, PresensiSiswa $presensi)
@@ -276,11 +284,11 @@ class WaliKelasController extends Controller
         $statusKehadiran = ['hadir', 'izin', 'alpha'];
 
         $data = [
-            "presensi" => $presensi->where('id_presensi', $request->id)->first(),
-            "kelas" => $kelas
+            'presensi' => $presensi->where('id_presensi', $request->id)->first(),
+            'kelas' => $kelas
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
                 ->get(),
-            "statusKehadiran" => $statusKehadiran,
+            'statusKehadiran' => $statusKehadiran,
         ];
 
         return view('wali-kelas.edit-presensi', $data);
@@ -312,11 +320,11 @@ class WaliKelasController extends Controller
             if ($request->hasFile('foto_siswa') && $request->file('foto_siswa')->isValid()) {
                 $foto_file = $request->file('foto_siswa');
                 $foto_extension = $foto_file->getClientOriginalExtension();
-                $foto_nama = Str::uuid() . '.' . $foto_extension;
+                $foto_nama = Str::uuid().'.'.$foto_extension;
                 $foto_file->move(public_path('siswa'), $foto_nama);
 
                 $update_data = $siswa->where('id_siswa', $id_siswa)->first();
-                $old_file_path = public_path('siswa') . '/' . $update_data->foto_siswa;
+                $old_file_path = public_path('siswa').'/'.$update_data->foto_siswa;
 
                 if (file_exists($old_file_path)) {
                     unlink($old_file_path);
@@ -329,13 +337,13 @@ class WaliKelasController extends Controller
 
             if ($dataUpdate) {
                 notify()->success('Data siswa telah diperbarui', 'Success');
+
                 return redirect('wali-kelas/akun-siswa')->with('success', 'Data berhasil diupdate');
             }
         }
 
         return back()->with('error', 'Data gagal diupdate');
     }
-
 
     public function updatePengurus(Request $request, PengurusKelas $pengurus, Role $role)
     {
@@ -351,6 +359,7 @@ class WaliKelasController extends Controller
 
         if ($pengurus->where('id_pengurus', $id_pengurus)->update($data)) {
             notify()->success('Data pengurus kelas telah diperbarui', 'Success');
+
             return redirect('/wali-kelas/akun-pengurus-kelas');
         }
 
@@ -382,12 +391,11 @@ class WaliKelasController extends Controller
             if ($request->hasFile('foto_bukti') && $request->file('foto_bukti')->isValid()) {
                 $foto_file = $request->file('foto_bukti');
                 $foto_extension = $foto_file->getClientOriginalExtension();
-                $foto_nama = Str::uuid() . '.' . $foto_extension;
+                $foto_nama = Str::uuid().'.'.$foto_extension;
                 $foto_file->move(public_path('presensi_bukti'), $foto_nama);
 
-
                 $update_data = $presensi->where('id_presensi', $id_presensi)->first();
-                $old_file_path = public_path('presensi_bukti') . '/' . $update_data->foto_bukti;
+                $old_file_path = public_path('presensi_bukti').'/'.$update_data->foto_bukti;
 
                 if (file_exists($old_file_path)) {
                     unlink($old_file_path);
@@ -400,9 +408,11 @@ class WaliKelasController extends Controller
 
             if ($dataUpdate) {
                 notify()->success('Data presensi siswa telah diperbarui', 'Success');
+
                 return redirect('wali-kelas/presensi-siswa');
             }
         }
+
         return back()->with('error', 'Data gagal diperbarui');
     }
 
@@ -421,18 +431,17 @@ class WaliKelasController extends Controller
 
             $pesan = [
                 'success' => true,
-                'pesan' => 'Data berhasil dihapus'
+                'pesan' => 'Data berhasil dihapus',
             ];
         } else {
             $pesan = [
                 'success' => false,
-                'pesan' => 'Data gagal dihapus'
+                'pesan' => 'Data gagal dihapus',
             ];
         }
 
         return response()->json($pesan);
     }
-
 
     public function logs(Logs $logs)
     {
@@ -440,43 +449,36 @@ class WaliKelasController extends Controller
             'logs' => $logs::orderBy('id_log', 'desc')->get(),
 
         ];
+
         return view('wali-kelas.logs', $data);
-    }
-
-    private function filterPresensi(Request $request, PresensiSiswa $presensi)
-    {
-        $user = Auth::user()->id_akun;
-        $query = $presensi
-            ->join('siswa', 'siswa.id_siswa', '=', 'presensi_siswa.id_siswa')
-            ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
-            ->where('guru.id_akun', $user);
-
-        $keywords = $request->keyword;
-        if (!empty($keywords)) {
-            $query->where(function ($subquery) use ($keywords) {
-                $subquery->where('nama_siswa', 'LIKE', "%$keywords%")
-                    ->orWhere('tanggal', 'LIKE', "%$keywords%")
-                    ->orWhere('status_kehadiran', 'LIKE', "%$keywords%")
-                    ->orWhere('nama_kelas', 'LIKE', "%$keywords%");
-            });
-        }
-
-        if ($request->filter_tanggal) {
-            $query->where('tanggal', 'LIKE', "%$request->filter_tanggal%");
-        }
-
-        if ($request->filter_kehadiran) {
-            $query->where('status_kehadiran', $request->filter_kehadiran);
-        }
-
-        return $query->get();
     }
 
     public function exportPresensi(Request $request, PresensiSiswa $presensi)
     {
-        $filter = $this->filterPresensi($request, $presensi);
-        $pdf = PDF::loadView('wali-kelas.presensi-pdf', ['presensi' => $filter]);
+        $user = Auth::user()->id_akun;
+        $query = $presensi
+            ->joinSiswaKelasGuruWaliJurusan()
+            ->select(
+                'presensi_siswa.id_presensi',
+                'siswa.nis',
+                'siswa.nama_siswa',
+                'presensi_siswa.tanggal',
+                'kelas.tingkatan',
+                'jurusan.nama_jurusan',
+                'kelas.nama_kelas',
+                'presensi_siswa.status_kehadiran',
+                'presensi_siswa.foto_bukti',
+                'presensi_siswa.keterangan'
+            )
+            ->where('guru.id_akun', $user);
+
+        $filter = $this->presensiFilterService->filter($request, $query, false, [
+            'search_columns' => ['nama_siswa', 'tanggal', 'status_kehadiran', 'nama_kelas'],
+            'month_filter' => null,
+            'kelas_filter' => null,
+        ]);
+        $pdf = Pdf::loadView('wali-kelas.presensi-pdf', ['presensi' => $filter]);
+
         return $pdf->download('presensi.pdf');
     }
 }

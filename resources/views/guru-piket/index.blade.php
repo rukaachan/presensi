@@ -15,13 +15,13 @@
     <nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse bg-white">
         <div class="position-sticky">
             <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="/guru-piket/dashboard" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
+                <a href="{{ route('guru-piket.dashboard') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
                     <img src="{{ asset('img/icon_Home_White.svg')}}" alt=""><span>Dashboard</span>
                 </a>
-                <a href="/guru-piket/akun-pengurus-kelas" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 ">
+                <a href="{{ route('guru-piket.pengurus-kelas.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 ">
                     <img src="{{ asset('img/icon_Profile.svg')}}" alt=""><span>Pengurus Kelas</span>
                 </a>
-                <a href="/guru-piket/presensi" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
+                <a href="{{ route('guru-piket.presensi.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
                     <img src="{{ asset('img/icon_Location.svg')}}" alt=""><span>Presensi</span>
                 </a>
             </div>

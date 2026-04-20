@@ -1,12 +1,10 @@
-<?php 
+<?php
 
 namespace Database\Seeders;
 
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Support\Arr;
 
 class PresensiSeeder extends Seeder
 {
@@ -28,7 +26,7 @@ class PresensiSeeder extends Seeder
                     'id_presensi' => $data,
                     'id_siswa' => $data,
                     'foto_bukti' => 'bukti.png',
-                    'jam_masuk' =>  $faker->time(),
+                    'jam_masuk' => $faker->time(),
                     'tanggal' => $faker->date(),
                     'status_kehadiran' => 'hadir',
                     'keterangan' => implode(' ', $faker->words()),

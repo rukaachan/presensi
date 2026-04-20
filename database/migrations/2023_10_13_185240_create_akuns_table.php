@@ -20,7 +20,7 @@ return new class extends Migration
             // Index
             $table->index('id_akun');
             $table->index('id_role');
-            
+
             // Foreign Key
 
             $table->foreign('id_role')->on('role_akun')

@@ -169,7 +169,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         Mckenziearts\Notify\LaravelNotifyServiceProvider::class,
-        Barryvdh\DomPDF\ServiceProvider::class        
+        Barryvdh\DomPDF\ServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -185,8 +185,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
-        'PDF' => Barryvdh\DomPDF\Facade::class
+        'PDF' => Barryvdh\DomPDF\Facade::class,
     ])->toArray(),
 
 ];
-  

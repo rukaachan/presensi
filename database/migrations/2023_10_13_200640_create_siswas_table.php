@@ -30,7 +30,6 @@ return new class extends Migration
             $table->index('id_siswa');
             $table->index('nama_siswa');
 
-
             // Foreign Key
             $table->foreign('id_akun')->on('akun')
                 ->references('id_akun')->onDelete('cascade')->onUpdate('cascade');

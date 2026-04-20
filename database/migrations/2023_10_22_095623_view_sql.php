@@ -10,9 +10,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::unprepared("DROP VIEW IF EXISTS view_presensi;");
+        DB::unprepared('DROP VIEW IF EXISTS view_presensi;');
 
-        DB::unprepared("
+        DB::unprepared('
         CREATE VIEW view_presensi AS
         SELECT
             p.foto_bukti AS foto_bukti,
@@ -26,11 +26,11 @@ return new class extends Migration
         LEFT JOIN siswa s ON p.id_siswa = s.id_siswa
         LEFT JOIN kelas k ON s.id_kelas = k.id_kelas
         LEFT JOIN jurusan j ON k.id_jurusan = j.id_jurusan
-        ");
+        ');
 
-        DB::unprepared("DROP VIEW IF EXISTS view_siswa;");
+        DB::unprepared('DROP VIEW IF EXISTS view_siswa;');
 
-        DB::unprepared("
+        DB::unprepared('
             CREATE VIEW view_siswa AS
             SELECT
                 s.id_siswa AS id_siswa,
@@ -46,7 +46,7 @@ return new class extends Migration
             FROM siswa s
             JOIN kelas k ON s.id_kelas = k.id_kelas
             JOIN jurusan j ON k.id_jurusan = j.id_jurusan
-        ");
+        ');
     }
 
     /**
@@ -54,7 +54,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::unprepared("DROP VIEW IF EXISTS view_presensi;");
-        DB::unprepared("DROP VIEW IF EXISTS view_siswa;");
+        DB::unprepared('DROP VIEW IF EXISTS view_presensi;');
+        DB::unprepared('DROP VIEW IF EXISTS view_siswa;');
     }
 };

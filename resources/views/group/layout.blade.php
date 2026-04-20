@@ -89,12 +89,15 @@
                 {{-- <h1 class="title">@yield('judul')</h1> --}}
                 <!-- Right links -->
                 <ul class="navbar-nav ms-auto d-flex flex-row">
-                    <a href="/logout" class="btn btn-danger">
-                        Logout
-                        <img class="icon" src="{{ asset('img/icon_Logout.svg') }}" alt="">
-                    </a>
+                    <form action="{{ route('logout') }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-danger">
+                            Logout
+                            <img class="icon" src="{{ asset('img/icon_Logout.svg') }}" alt="">
+                        </button>
+                    </form>
                     @if (Auth::user()->id_role == '4')
-                        <a href="/guru-piket/detail-profil/{{ Auth::user()->id_akun }}">
+                        <a href="{{ route('guru-piket.profil.detail', ['id' => Auth::user()->id_akun]) }}">
                             <li class="nav-item dropdown p-10">
                                 <img src="{{ url('guru') . '/' . App\Models\Guru::where('id_akun', Auth::user()->id_akun)->first()->foto_guru }}"
                                     class="rounded-circle" height="42" alt="" width="42"
@@ -102,7 +105,7 @@
                             </li>
                         </a>
                     @elseif(Auth::user()->id_role == '5')
-                        <a href="/guru-bk/detail-profil/{{ Auth::user()->id_akun }}">
+                        <a href="{{ route('guru-bk.profil.detail', ['id' => Auth::user()->id_akun]) }}">
                             <li class="nav-item dropdown p-10">
                                 <img src="{{ url('guru') . '/' . App\Models\Guru::where('id_akun', Auth::user()->id_akun)->first()->foto_guru }}"
                                     class="rounded-circle" height="42" alt="" width="42"

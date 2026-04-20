@@ -182,7 +182,7 @@
                 style="background-color: #F9812A; width: 200px;">EDIT KELAS</a>
             <button class="btnHapus btn btn-danger text-decoration-underline text-light fw-bold rounded-3"
                 style="width: 150px;"  idHapus="{{ $kelas->id_kelas }}">HAPUS KELAS</button>
-            <a href="/tata-usaha/tambah-pengurus-kelas?kelas={{ $kelas->id_kelas }}" class="btn btn-primary text-decoration-underline text-light fw-bold rounded-3"
+            <a href="{{ route('tata-usaha.pengurus-kelas.create', ['kelas' => '{{ $kelas->id_kelas }}']) }}" class="btn btn-primary text-decoration-underline text-light fw-bold rounded-3"
                 style="width: 200px;">TAMBAH PENGURUS</a>
         </div>
     </div>

@@ -20,3 +20,12 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.serena/
+/.sisyphus/
+/.phpactor.json
+
+# PHPStan
+/phpstan-baseline.neon
+
+# Test results
+/SECURITY_TEST_RESULTS.md

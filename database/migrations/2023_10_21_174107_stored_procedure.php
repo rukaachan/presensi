@@ -10,7 +10,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       
+
         DB::unprepared('DROP Procedure IF EXISTS CreateGuruBK');
         DB::unprepared("
         CREATE PROCEDURE CreateGuruBK(
@@ -44,7 +44,7 @@ return new class extends Migration
             END IF;
         END
         ");
-        
+
         DB::unprepared('DROP Procedure IF EXISTS CreateGuruPiket');
         DB::unprepared("
         CREATE PROCEDURE CreateGuruPiket(

@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -19,7 +19,7 @@ return new class extends Migration
         DB::unprepared('DROP FUNCTION IF EXISTS CountStudents');
         DB::unprepared('DROP FUNCTION IF EXISTS CountTotalStudents');
         DB::unprepared('DROP FUNCTION IF EXISTS CountStatus');
-        
+
         DB::unprepared('
             CREATE FUNCTION CountTeachers() RETURNS INT
             BEGIN
@@ -64,7 +64,6 @@ return new class extends Migration
                 RETURN classMemberCount;
             END
         ');
-
 
         DB::unprepared('
             CREATE FUNCTION CountWaliKelas() RETURNS INT
