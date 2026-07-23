@@ -21,28 +21,20 @@ class PengurusKelasController extends Controller
     {
         $user = Auth::user()->id_akun;
 
-        $totalHadir = PresensiSiswa::query()
-            ->selectRaw('COUNT(*) as totalHadir')
+        $totals = PresensiSiswa::query()
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalHadir', ['hadir'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalIzin', ['izin'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalAlpha', ['alpha'])
             ->joinSiswaKelas()
-            ->where('presensi_siswa.status_kehadiran', '=', 'Hadir')
             ->where('siswa.id_akun', $user)
-            ->value('totalHadir');
+            ->toBase()
+            ->first();
 
-        $totalIzin = PresensiSiswa::query()
-            ->selectRaw('COUNT(*) as totalIzin')
-            ->joinSiswaKelas()
-            ->where('presensi_siswa.status_kehadiran', '=', 'Izin')
-            ->where('siswa.id_akun', $user)
-            ->value('totalIzin');
-
-        $totalAlpha = PresensiSiswa::query()
-            ->selectRaw('COUNT(*) as totalAlpha')
-            ->joinSiswaKelas()
-            ->where('presensi_siswa.status_kehadiran', '=', 'Alpha')
-            ->where('siswa.id_akun', $user)
-            ->value('totalAlpha');
-
-        return view('pengurus-kelas.index', compact('totalHadir', 'totalIzin', 'totalAlpha'));
+        return view('pengurus-kelas.index', [
+            'totalHadir' => (int) $totals->totalHadir,
+            'totalIzin' => (int) $totals->totalIzin,
+            'totalAlpha' => (int) $totals->totalAlpha,
+        ]);
     }
 
     public function detailProfil(Request $request, PengurusKelas $pengurus)

@@ -108,7 +108,7 @@ class GuruController extends Controller
 
         if ($request->hasFile('foto_guru') && $request->file('foto_guru')->isValid()) {
             $foto_file = $request->file('foto_guru');
-            $foto_nama = md5($foto_file->getClientOriginalName() . time()) . '.' . $foto_file->getClientOriginalExtension();
+            $foto_nama = md5($foto_file->getClientOriginalName().time()).'.'.$foto_file->getClientOriginalExtension();
             $foto_file->move(public_path('guru'), $foto_nama);
             $data['foto_guru'] = $foto_nama;
         } else {
@@ -203,11 +203,11 @@ class GuruController extends Controller
             if ($request->hasFile('foto_guru') && $request->file('foto_guru')->isValid()) {
                 $foto_file = $request->file('foto_guru');
                 $foto_extension = $foto_file->getClientOriginalExtension();
-                $foto_nama = md5($foto_file->getClientOriginalName() . time()) . '.' . $foto_extension;
+                $foto_nama = md5($foto_file->getClientOriginalName().time()).'.'.$foto_extension;
                 $foto_file->move(public_path('guru'), $foto_nama);
                 $update_data = $guru->where('id_guru', $id_guru)->first();
 
-                $old_file_path = public_path('guru') . '/' . $update_data->foto_guru;
+                $old_file_path = public_path('guru').'/'.$update_data->foto_guru;
                 if (file_exists($old_file_path)) {
                     unlink($old_file_path);
                 }
@@ -281,7 +281,7 @@ class GuruController extends Controller
             $hapus_guru = $guru->delete();
             $akun->where('id_akun', $guru->id_akun)->delete();
 
-            $filePath = public_path('guru') . '/' . $guru->foto_guru;
+            $filePath = public_path('guru').'/'.$guru->foto_guru;
 
             if (file_exists($filePath) && unlink($filePath)) {
                 return response()->json(['success' => true]);

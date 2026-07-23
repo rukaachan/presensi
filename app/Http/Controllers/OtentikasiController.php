@@ -16,6 +16,7 @@ class OtentikasiController extends Controller
         2 => 'wali-kelas/dashboard',
         1 => 'siswa/dashboard',
     ];
+
     public function index()
     {
         if (! Auth::check()) {

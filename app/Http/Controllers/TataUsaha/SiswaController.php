@@ -115,7 +115,7 @@ class SiswaController extends Controller
 
         if ($request->hasFile('foto_siswa') && $request->file('foto_siswa')->isValid()) {
             $foto_file = $request->file('foto_siswa');
-            $foto_nama = md5($foto_file->getClientOriginalName() . time()) . '.' . $foto_file->getClientOriginalExtension();
+            $foto_nama = md5($foto_file->getClientOriginalName().time()).'.'.$foto_file->getClientOriginalExtension();
             $foto_file->move(public_path('siswa'), $foto_nama);
             $data_siswa['foto_siswa'] = $foto_nama;
         } else {
@@ -177,11 +177,11 @@ class SiswaController extends Controller
             if ($request->hasFile('foto_siswa') && $request->file('foto_siswa')->isValid()) {
                 $foto_file = $request->file('foto_siswa');
                 $foto_extension = $foto_file->getClientOriginalExtension();
-                $foto_nama = md5($foto_file->getClientOriginalName() . time()) . '.' . $foto_extension;
+                $foto_nama = md5($foto_file->getClientOriginalName().time()).'.'.$foto_extension;
                 $foto_file->move(public_path('siswa'), $foto_nama);
 
                 $update_data = $siswa->where('id_siswa', $id_siswa)->first();
-                $old_file_path = public_path('siswa') . '/' . $update_data->foto_siswa;
+                $old_file_path = public_path('siswa').'/'.$update_data->foto_siswa;
 
                 if (file_exists($old_file_path)) {
                     unlink($old_file_path);
@@ -220,7 +220,7 @@ class SiswaController extends Controller
             $aksi = $siswa->delete();
             $akun->where('id_akun', $siswa->id_akun)->delete();
 
-            $filePath = public_path('siswa') . '/' . $foto_siswa;
+            $filePath = public_path('siswa').'/'.$foto_siswa;
 
             if (file_exists($filePath) && unlink($filePath)) {
                 return response()->json(['success' => true]);

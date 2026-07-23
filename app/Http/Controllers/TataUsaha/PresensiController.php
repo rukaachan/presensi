@@ -11,9 +11,7 @@ use Illuminate\Http\Request;
 
 class PresensiController extends Controller
 {
-    public function __construct(private PresensiFilterService $presensiFilterService)
-    {
-    }
+    public function __construct(private PresensiFilterService $presensiFilterService) {}
 
     public function showPresensi(Request $request, Kelas $kelas, PresensiSiswa $presensi)
     {

@@ -126,7 +126,7 @@ class KelasController extends Controller
 
             return redirect('tata-usaha/kelas');
         } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
         }
     }
 

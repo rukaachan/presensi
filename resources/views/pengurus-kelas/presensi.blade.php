@@ -24,7 +24,7 @@
 @endsection
 @section('isi')
     <div class="container mt-5">
-        <form method="POST" action="{{ route('webcam.capture') }}" id="presensiForm">
+            <form method="POST" action="{{ route('pengurus-kelas.webcam.capture') }}" id="presensiForm">
             @csrf
             <div class="row">
                 <div class="col-md-6">
@@ -70,7 +70,7 @@
 
         function checkIfSnapshotAlreadyTaken() {
             $.ajax({
-                url: '{{ route('webcam.check_snapshot') }}',
+                url: '{{ route('pengurus-kelas.webcam.check_snapshot') }}',
                 type: 'POST',
                 data: {
                     id_siswa: '{{ $siswa->id_siswa }}',

@@ -165,14 +165,14 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
         $optimizedSiswaHadir = (int) PresensiSiswa::query()
             ->selectRaw('COUNT(*) as totalHadir')
             ->joinSiswaKelas()
-            ->where('presensi_siswa.status_kehadiran', 'Hadir')
+            ->where('presensi_siswa.status_kehadiran', 'hadir')
             ->where('siswa.id_akun', $this->siswaAkunId)
             ->value('totalHadir');
 
         $baselineSiswaHadir = (int) DB::table('presensi_siswa')
             ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
             ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-            ->where('presensi_siswa.status_kehadiran', 'Hadir')
+            ->where('presensi_siswa.status_kehadiran', 'hadir')
             ->where('siswa.id_akun', $this->siswaAkunId)
             ->count();
 
@@ -198,19 +198,19 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
             'totalHadir' => (int) DB::table('presensi_siswa')
                 ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-                ->where('presensi_siswa.status_kehadiran', 'Hadir')
+                ->where('presensi_siswa.status_kehadiran', 'hadir')
                 ->where('siswa.id_akun', $akunId)
                 ->count(),
             'totalIzin' => (int) DB::table('presensi_siswa')
                 ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-                ->where('presensi_siswa.status_kehadiran', 'Izin')
+                ->where('presensi_siswa.status_kehadiran', 'izin')
                 ->where('siswa.id_akun', $akunId)
                 ->count(),
             'totalAlpha' => (int) DB::table('presensi_siswa')
                 ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
-                ->where('presensi_siswa.status_kehadiran', 'Alpha')
+                ->where('presensi_siswa.status_kehadiran', 'alpha')
                 ->where('siswa.id_akun', $akunId)
                 ->count(),
         ];
@@ -223,9 +223,9 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
             ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
             ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
             ->where('guru.id_akun', $akunId)
-            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'Hadir' THEN 1 ELSE 0 END), 0) as totalHadir")
-            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'Izin' THEN 1 ELSE 0 END), 0) as totalIzin")
-            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'Alpha' THEN 1 ELSE 0 END), 0) as totalAlpha")
+            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'hadir' THEN 1 ELSE 0 END), 0) as totalHadir")
+            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'izin' THEN 1 ELSE 0 END), 0) as totalIzin")
+            ->selectRaw("COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = 'alpha' THEN 1 ELSE 0 END), 0) as totalAlpha")
             ->first();
 
         return [
@@ -328,7 +328,7 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
                 'foto_bukti' => 'bukti1.jpg',
                 'jam_masuk' => '07:00:00',
                 'tanggal' => '2026-01-10',
-                'status_kehadiran' => 'Hadir',
+                'status_kehadiran' => 'hadir',
                 'keterangan' => 'ok',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -339,7 +339,7 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
                 'foto_bukti' => 'bukti2.jpg',
                 'jam_masuk' => '07:01:00',
                 'tanggal' => '2026-01-11',
-                'status_kehadiran' => 'Izin',
+                'status_kehadiran' => 'izin',
                 'keterangan' => 'ok',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -350,7 +350,7 @@ class OptimizedDashboardQueryRegressionTest extends TestCase
                 'foto_bukti' => 'bukti3.jpg',
                 'jam_masuk' => '07:02:00',
                 'tanggal' => '2026-01-12',
-                'status_kehadiran' => 'Alpha',
+                'status_kehadiran' => 'alpha',
                 'keterangan' => 'ok',
                 'created_at' => now(),
                 'updated_at' => now(),

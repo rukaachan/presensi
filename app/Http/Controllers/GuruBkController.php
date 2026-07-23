@@ -12,15 +12,14 @@ use Illuminate\Support\Facades\DB;
 
 class GuruBkController extends Controller
 {
-    public function __construct(private PresensiFilterService $presensiFilterService)
-    {
-    }
+    public function __construct(private PresensiFilterService $presensiFilterService) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $statusTotals = DB::selectOne("\n            SELECT\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'Hadir' THEN 1 ELSE 0 END), 0) AS totalHadir,\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'Izin' THEN 1 ELSE 0 END), 0) AS totalIzin,\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'Alpha' THEN 1 ELSE 0 END), 0) AS totalAlpha\n            FROM presensi_siswa\n        ");
+        $statusTotals = DB::selectOne("\n            SELECT\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'hadir' THEN 1 ELSE 0 END), 0) AS totalHadir,\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'izin' THEN 1 ELSE 0 END), 0) AS totalIzin,\n                COALESCE(SUM(CASE WHEN status_kehadiran = 'alpha' THEN 1 ELSE 0 END), 0) AS totalAlpha\n            FROM presensi_siswa\n        ");
 
         $totalHadir = $statusTotals->totalHadir;
         $totalIzin = $statusTotals->totalIzin;

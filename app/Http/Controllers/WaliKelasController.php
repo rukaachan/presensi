@@ -19,9 +19,8 @@ use Illuminate\Support\Str;
 
 class WaliKelasController extends Controller
 {
-    public function __construct(private PresensiFilterService $presensiFilterService)
-    {
-    }
+    public function __construct(private PresensiFilterService $presensiFilterService) {}
+
     public function index()
     {
         $user = Auth::user()->id_akun;
@@ -33,9 +32,9 @@ class WaliKelasController extends Controller
             ->value('totalSiswa');
 
         $attendanceStats = PresensiSiswa::query()
-            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalHadir', ['Hadir'])
-            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalIzin', ['Izin'])
-            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalAlpha', ['Alpha'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalHadir', ['hadir'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalIzin', ['izin'])
+            ->selectRaw('COALESCE(SUM(CASE WHEN presensi_siswa.status_kehadiran = ? THEN 1 ELSE 0 END), 0) as totalAlpha', ['alpha'])
             ->joinSiswaKelasGuruWali()
             ->where('guru.id_akun', $user)
             ->first();
@@ -231,20 +230,16 @@ class WaliKelasController extends Controller
         $data['pembuat'] = $role_akun->nama_role;
         $data['jabatan'] = 'Pengurus Kelas';
 
-        $createdPengurus = $pengurus->create($data);
+        $pengurus->create($data);
 
-        if ($createdPengurus) {
-            $siswaId = $request->input('id_siswa');
-            $akun->join('siswa', 'akun.id_akun', '=', 'siswa.id_akun')
-                ->where('siswa.id_siswa', $siswaId)
-                ->update(['akun.id_role' => 3]);
+        $siswaId = $request->input('id_siswa');
+        $akun->join('siswa', 'akun.id_akun', '=', 'siswa.id_akun')
+            ->where('siswa.id_siswa', $siswaId)
+            ->update(['akun.id_role' => 3]);
 
-            notify()->success('Data pengurus kelas telah ditambah', 'Success');
+        notify()->success('Data pengurus kelas telah ditambah', 'Success');
 
-            return redirect('wali-kelas/akun-pengurus-kelas')->with('success', 'Data pengurus kelas berhasil ditambah');
-        }
-
-        return back()->with('error', 'Data pengurus kelas gagal ditambahkan');
+        return redirect('wali-kelas/akun-pengurus-kelas')->with('success', 'Data pengurus kelas berhasil ditambah');
     }
 
     public function editSiswa(Request $request, Kelas $kelas, Siswa $siswa)
