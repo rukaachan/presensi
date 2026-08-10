@@ -1,77 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <!-- Laravel Notify -->
+    <meta name="description" content="Sign in to SmartPresensi">
     @notifyCss
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
-    <title>Login</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <title>Sign in · SmartPresensi</title>
 </head>
 
-<body>
-    <section class="h-100 gradient-form mt-5">
-        <div class="container py-5 h-100 mt-5">
-            <div class="row d-flex justify-content-center align-items-center h-100">
-                <div class="col-xl-10">
-                    <div class="card text-black">
-                        <div class="row g-0">
-                            <div class="col-lg-6">
-                                <div class="card-body p-md-5 mx-md-4">
-                                    <!-- Laravel Notify -->
-                                    <div class="notify" style="z-index: 999; position: absolute; display: block">
-                                        @include('notify::components.notify')
-                                        @notifyJs
-                                    </div>
-
-                                    <img src="{{ asset('img/logo.png') }}" alt="logo" class="w-50">
-
-                                    <form action="" method="POST">
-                                        @csrf
-                                        <p class="mb-3 fw-bold fs-3">Log In</p>
-
-                                        <div class="form-outline mb-4">
-                                            @error('username')
-                                                <div class="text-danger p-0 m-0">{{ $message }}</div>
-                                            @enderror
-                                            <input type="text" class="form-control" placeholder="Username"
-                                                name="username" value="{{ old('username') }}"
-                                                class="@error('username') is-invalid @enderror" autofocus />
-                                        </div>
-
-                                        <div class="form-outline
-                                                mb-4">
-                                            @error('password')
-                                                <div class="text-danger p-0 m-0">{{ $message }}</div>
-                                            @enderror
-                                            <input type="password" class="form-control" placeholder="Password"
-                                                name="password" class="@error('password') is-invalid @enderror" />
-                                        </div>
-
-                                        <div class="d-flex align-items-center justify-content-center pb-4">
-                                            <button type="submit"
-                                                class="btn bg-primary w-100 text-white p-2 fw-bold fs-5 rounded-2">LOGIN</button>
-                                        </div>
-
-                                    </form>
-
-                                </div>
-                            </div>
-                            <div
-                                class="col-lg-5 d-flex align-items-center text-center"class="text-white px-3 py-5 p-md-5 mx-md-4">
-                                <img src="{{ asset('img/backtoschool.png') }}" style="width: 100%;" alt="logo">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <div class="fixed-bottom">
-        <img src="{{ asset('img/wave.svg') }}" style="width: 100%;">
+<body class="auth-body">
+    <div class="notify-stack" aria-live="polite">
+        @include('notify::components.notify')
+        @notifyJs
     </div>
+
+    <main class="auth-shell">
+        <section class="auth-story" aria-labelledby="auth-story-title">
+            <a class="auth-brand" href="{{ route('login') }}" aria-label="SmartPresensi home">
+                <span class="brand-mark">SP</span>
+                <span class="brand-word">Smart<span>Presensi</span></span>
+            </a>
+
+            <div class="auth-story-copy">
+                <p class="eyebrow">Ruang kerja presensi sekolah</p>
+                <h1 id="auth-story-title">Hari sekolah berjalan lebih baik saat kehadiran tercatat jelas.</h1>
+                <p>Presensi, validasi kelas, dan administrasi sekolah dalam satu ruang kerja.</p>
+            </div>
+
+            <div class="auth-story-footer">
+                <span class="auth-footer-line"></span>
+                <span>Dibuat untuk operasional sekolah yang terarah</span>
+            </div>
+        </section>
+
+        <section class="auth-panel" aria-labelledby="login-title">
+            <div class="auth-panel-content">
+                <div class="auth-panel-heading">
+                    <p class="eyebrow">Selamat datang kembali</p>
+                    <h2 id="login-title">Masuk ke ruang kerja Anda</h2>
+                    <p>Gunakan akun sekolah untuk melanjutkan.</p>
+                </div>
+
+                <form action="{{ route('login') }}" method="POST" class="auth-form">
+                    @csrf
+                    <div class="field-group">
+                        <label for="username">Username</label>
+                        <input id="username" type="text" name="username" value="{{ old('username') }}"
+                            autocomplete="username" autofocus @class(['form-control bg-background text-foreground ring-1 ring-border rounded-md', 'is-invalid' => $errors->has('username')])>
+                        @error('username')
+                            <p class="field-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="field-group">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" autocomplete="current-password"
+                            @class(['form-control bg-background text-foreground ring-1 ring-border rounded-md', 'is-invalid' => $errors->has('password')])>
+                        @error('password')
+                            <p class="field-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button type="submit" class="auth-submit rounded-md bg-accent text-accent-foreground ring-1 ring-accent">
+                        <span>Masuk ke dashboard</span>
+                        <i class="ph-bold ph-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </form>
+
+                <p class="auth-note">Akses hanya tersedia untuk akun sekolah yang terdaftar.</p>
+            </div>
+
+            <div class="auth-visual rounded-lg bg-card text-card-foreground ring-1 ring-border" aria-label="Ringkasan ruang kerja presensi">
+                <div class="auth-illustration" aria-hidden="true">
+                    <span class="auth-illustration-card auth-illustration-card--main">
+                        <i class="ph-bold ph-buildings"></i>
+                    </span>
+                    <span class="auth-illustration-card auth-illustration-card--top">
+                        <i class="ph-bold ph-calendar-check"></i>
+                    </span>
+                    <span class="auth-illustration-card auth-illustration-card--bottom">
+                        <i class="ph-bold ph-users-three"></i>
+                    </span>
+                </div>
+                <span class="auth-visual-caption">Mulai dari catatan yang tepercaya</span>
+            </div>
+        </section>
+    </main>
 </body>
 
 </html>

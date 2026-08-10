@@ -16,8 +16,12 @@
     <div class="container">
         <h1 class="mt-4 text-center">Detail Guru</h1>
         <div class="d-flex justify-content-center">
-            <img src="{{ asset('guru/' . $guru->foto_guru) }}" width="200px" height="200px" alt="Profile" class="mt-4 mb-2"
-                style="border-radius: 100px;" alt="Guru" />
+            @include('layout.partials.entity-avatar', [
+                'directory' => 'guru',
+                'filename' => $guru->foto_guru,
+                'alt' => 'Foto ' . $guru->nama_guru,
+                'variant' => 'profile',
+            ])
         </div>
         <div class="card mt-3  bg-white">
             <div class="card-body">
@@ -84,49 +88,8 @@
             </div>
         </div>
         <div class="mt-3 mb-5">
-            <button id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #14C345; width: 150px;">KEMBALI</button>
+            <button type="button" id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #14C345; width: 150px;">Kembali</button>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('.container').on('click', '.btnHapus', function(a) {
-            a.preventDefault();
-            let idHapus = $(this).closest('.btnHapus').attr('idHapus');
-            swal.fire({
-                title: "Apakah anda yakin?",
-                text: "Anda tidak dapat mengembalikkan nya lagi!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                confirmButtonText: "Ya, Hapus!",
-                cancelButtonColor: "#d33",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        type: 'DELETE',
-                        url: '/tata-usaha/hapus-guru',
-                        data: {
-                            id_guru: idHapus,
-                            _token: "{{ csrf_token() }}"
-                        },
-                        success: function(data) {
-                            if (data.success) {
-                                swal.fire('Berhasil di hapus!', '', 'success').then(function() {
-                                    //Refresh Halaman
-                                    window.location.href = "http://localhost:8000/tata-usaha/akun-guru";
-                                });
-                            }
-                        }
-                    });
-                }
-                });
-            });
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

@@ -1,5 +1,5 @@
 @extends('group.layout')
-@section('judul', 'Edit Presensi | Wali Kelas')
+@section('judul', 'Edit presensi')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Presensi</h1>
@@ -13,7 +13,7 @@
                         enctype="multipart/form-data">
                         @csrf
                         <div class="form-group">
-                            <label>Status Kehadiran</label>
+                            <label>Status kehadiran</label>
                             <div>
                                 @foreach ($statusKehadiran as $option)
                                     <div class="form-check form-check-inline">
@@ -31,7 +31,7 @@
                             @error('keterangan')
                                 <div class="text-danger p-0 m-0">{{ $message }}</div>
                             @enderror
-                            <label for="keterangan">Keterangan Lebih Lanjut</label>
+                            <label for="keterangan">Keterangan tambahan</label>
                             <input type="text" class="form-control @error('keterangan') is-invalid @enderror"
                                 name="keterangan" value="{{ $presensi->keterangan }}">
                         </div>
@@ -49,9 +49,9 @@
                         <div class="mt-3">
                             <a href="{{ url('wali-kelas/presensi-siswa') }}"
                                 class="btn text-decoration-underline text-light fw-bold rounded-3"
-                                style="background-color: #14C345">KEMBALI</a>
+                                style="background-color: #14C345">Kembali</a>
                             <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                                style="background-color: #F9812A">SUBMIT</button>
+                                style="background-color: #F9812A">Simpan</button>
                         </div>
                     </form>
                 </div>

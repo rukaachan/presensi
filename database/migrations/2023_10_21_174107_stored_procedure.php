@@ -10,6 +10,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
 
         DB::unprepared('DROP Procedure IF EXISTS CreateGuruBK');
         DB::unprepared("
@@ -120,6 +123,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::unprepared('DROP Procedure IF EXISTS CreateGuruBK');
         DB::unprepared('DROP Procedure IF EXISTS CreateGuruPiket');
         DB::unprepared('DROP Procedure IF EXISTS CreateWaliKelas');

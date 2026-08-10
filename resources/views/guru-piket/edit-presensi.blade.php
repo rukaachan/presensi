@@ -1,5 +1,6 @@
 @extends('group.layout')
-@section('judul', 'Edit Presensi')
+@section('judul', 'Edit presensi')
+@section('page-description', 'Perbaiki status dan keterangan catatan kehadiran yang dipilih.')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Presensi</h1>
@@ -13,7 +14,7 @@
                         enctype="multipart/form-data">
                         @csrf
                         <div class="form-group">
-                            <label>Status Kehadiran</label>
+                            <label>Status kehadiran</label>
                             <div>
                                 @foreach ($statusKehadiran as $option)
                                     <div class="form-check form-check-inline">
@@ -33,7 +34,7 @@
                             </div> 
                         @enderror
                         <div class="form-group">
-                            <label for="keterangan">Keterangan Lebih Lanjut</label>
+                            <label for="keterangan">Keterangan tambahan</label>
                             <input type="text" class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
                                 value="{{ $presensi->keterangan }}">
                         </div>
@@ -59,24 +60,15 @@
                             <input type="hidden" name="id_siswa" value="{{ $presensi->id_siswa }}" />
                         </div>
                         <div class="mt-3">
-                            <button id="kembali"
+                            <button type="button" id="kembali"
                                 class="btn text-decoration-underline text-light fw-bold rounded-3"
-                                style="background-color: #14C345">KEMBALI</button>
+                                style="background-color: #14C345">Kembali</button>
                             <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                                style="background-color: #F9812A">SUBMIT</button>
+                                style="background-color: #F9812A">Simpan</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

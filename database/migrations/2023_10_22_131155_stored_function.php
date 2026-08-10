@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up()
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::unprepared('DROP FUNCTION IF EXISTS CountTeachers');
         DB::unprepared('DROP FUNCTION IF EXISTS CountBkTeachers');
         DB::unprepared('DROP FUNCTION IF EXISTS CountPiketTeachers');
@@ -98,6 +102,10 @@ return new class extends Migration
      */
     public function down()
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::unprepared('DROP FUNCTION IF EXISTS CountTeachers');
         DB::unprepared('DROP FUNCTION IF EXISTS CountBkTeachers');
         DB::unprepared('DROP FUNCTION IF EXISTS CountPiketTeachers');

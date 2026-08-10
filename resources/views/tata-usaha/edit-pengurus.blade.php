@@ -1,5 +1,6 @@
 @extends('group.layout')
-@section('judul', 'Edit Pengurus Kelas')
+@section('judul', 'Edit pengurus kelas')
+@section('page-description', 'Perbarui peran siswa dalam struktur pengurus kelas.')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Pengurus Kelas</h1>
@@ -12,7 +13,7 @@
                     <form action="update" method="POST">
                         @csrf
                         <div class="form-group">
-                            <label>Nama Siswa</label>
+                            <label>Nama siswa</label>
                             <input type="text" class="form-control" name="nama_siswa" value="{{ $pengurus->nama_siswa }}"
                                 disabled id="">
                             <input type="hidden" class="form-control" name="id_pengurus"
@@ -28,23 +29,14 @@
                                 <option value="bendahara" {{ $pengurus->status_jabatan == 'bendahara'? 'selected' : '' }}>Bendahara</option>
                             </select>
                         </div> <br><br>
-                        <button id="kembali"
+                        <button type="button" id="kembali"
                             class="btn text-decoration-underline text-light fw-bold rounded-3"
-                            style="background-color: #14C345">KEMBALI</button>
+                            style="background-color: #14C345">Kembali</button>
                         <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                            style="background-color: #F9812A ">SUBMIT</button>
+                            style="background-color: #F9812A ">Simpan</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

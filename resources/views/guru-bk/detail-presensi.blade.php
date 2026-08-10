@@ -19,8 +19,12 @@
     <img src="{{ asset('img/group_siswa.png') }}" width="100%" height="200px" alt="" style="object-fit: fill;">
     <div class="container">  
         <div class="d-flex justify-content-center">
-            <img src="{{ asset('siswa/' . $presensi->foto_siswa) }}" width="200px" height="200px" alt="Profile" class="mt-4 mb-2"
-                style="border-radius: 100px;" alt="Siswa" />
+            @include('layout.partials.entity-avatar', [
+                'directory' => 'siswa',
+                'filename' => $presensi->foto_siswa,
+                'alt' => 'Foto ' . $presensi->nama_siswa,
+                'variant' => 'profile',
+            ])
         </div>
         <div class="card mt-3  bg-white">
             <div class="card-body">
@@ -34,7 +38,7 @@
                             Nama Siswa
                         </div>
                         <div class="col-sm">
-                            Nomer Hp
+                            Nomor HP
                         </div>
                         <div class="col-sm">
                             Jenis Kelamin
@@ -109,7 +113,7 @@
                             Jam Masuk
                         </div>
                         <div class="col-sm">
-                            Status Kehadiran
+                            Status kehadiran
                         </div>
                         <div class="col-sm">
                             Keterangan
@@ -138,8 +142,11 @@
                     </div>
                     <div class="row">
                         <div class="col-sm">
-                            <img src="{{ url('presensi_bukti') . '/' . $presensi->foto_bukti }} "
-                                style="max-width: 100px; height: auto;" alt="Bukti" alt="Gambar-Bukti" />
+                            @if ($presensi->foto_bukti && file_exists(public_path('presensi_bukti/' . $presensi->foto_bukti)))
+                                <img src="{{ asset('presensi_bukti/' . $presensi->foto_bukti) }}" class="evidence-preview" alt="Bukti presensi {{ $presensi->nama_siswa }}">
+                            @else
+                                <span class="evidence-placeholder"><i class="ph-bold ph-image-square" aria-hidden="true"></i> Bukti tidak tersedia</span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -147,17 +154,8 @@
             </div>
         </div>
         <div class="mt-3 mb-5">
-            <button id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #14C345; width: 150px;">KEMBALI</button>
+            <button type="button" id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #14C345; width: 150px;">Kembali</button>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

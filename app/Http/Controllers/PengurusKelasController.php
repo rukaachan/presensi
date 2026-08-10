@@ -10,6 +10,7 @@ use App\Models\Validasi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PengurusKelasController extends Controller
@@ -39,7 +40,19 @@ class PengurusKelasController extends Controller
 
     public function detailProfil(Request $request, PengurusKelas $pengurus)
     {
-        $id_pengurus = $pengurus->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')->where('id_akun', $request->id)->first()->id_pengurus;
+        $pengurusRecord = $pengurus
+            ->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')
+            ->where('id_akun', $request->id)
+            ->first();
+
+        if ($pengurusRecord === null) {
+            return view('layout.profile-unavailable', [
+                'message' => 'Akun pengurus kelas ini belum terhubung dengan data siswa.',
+                'backUrl' => route('pengurus-kelas.dashboard'),
+            ]);
+        }
+
+        $id_pengurus = $pengurusRecord->id_pengurus;
         $data = [
             'pengurus' => $pengurus
                 ->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')
@@ -62,6 +75,22 @@ class PengurusKelasController extends Controller
         return view('pengurus-kelas.presensi', ['siswa' => $siswaData]);
     }
 
+    public function checkSnapshot(Request $request)
+    {
+        $pengurus = Siswa::where('id_akun', Auth::user()->id_akun)->first();
+        $target = Siswa::where('id_siswa', $request->input('id_siswa'))
+            ->where('id_kelas', $pengurus?->id_kelas)
+            ->first();
+
+        abort_unless($pengurus !== null && $target !== null, 403);
+
+        $exists = PresensiSiswa::where('id_siswa', $target->id_siswa)
+            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
+    }
+
     public function showKelas(Request $request, Siswa $siswa, Validasi $validasi)
     {
         $siswa = $siswa
@@ -69,6 +98,10 @@ class PengurusKelasController extends Controller
             ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
             ->where('akun.id_akun', Auth::user()->id_akun)
             ->first();
+
+        if ($siswa === null) {
+            return view('pengurus-kelas.kelas', ['data' => collect([])]);
+        }
 
         $waktuValidasi = $request->input('waktu_validasi');
 
@@ -88,6 +121,10 @@ class PengurusKelasController extends Controller
             ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
             ->where('akun.id_akun', Auth::user()->id_akun)
             ->first();
+
+        if ($siswa === null) {
+            return back()->with('error', 'Profil pengurus belum terhubung dengan kelas.');
+        }
 
         $waktuValidasi = $request->input('waktu_validasi');
 
@@ -153,6 +190,12 @@ class PengurusKelasController extends Controller
             return back()->withInput()->with('error', 'Tidak memiliki akses untuk siswa ini.');
         }
 
+        if (PresensiSiswa::where('id_siswa', $targetSiswa->id_siswa)
+            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+            ->exists()) {
+            return back()->withInput()->with('error', 'Presensi untuk hari ini sudah tercatat.');
+        }
+
         $image = $request->input('image');
         if (! is_string($image) || ! preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $image)) {
             return back()->withInput()->with('error', 'Format gambar tidak valid.');
@@ -184,7 +227,7 @@ class PengurusKelasController extends Controller
             'jam_masuk' => now('Asia/Jakarta')->format('H:i:s'),
             'tanggal' => now('Asia/Jakarta')->toDateString(),
             'status_kehadiran' => 'hadir',
-            'keterangan' => 'Some description',
+            'keterangan' => 'Presensi melalui kamera',
             'pembuat' => 'Siswa',
 
         ]);
@@ -216,28 +259,30 @@ class PengurusKelasController extends Controller
         $selectedMonth = $request->input('bulan', null);
         $selectedWeek = $request->input('minggu', null);
 
-        return $presensi::selectRaw("*, 
+        $dayExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%d', presensi_siswa.tanggal) AS INTEGER)"
+            : 'DAY(presensi_siswa.tanggal)';
+
+        return $presensi::selectRaw("*,
             CASE
-                WHEN DAY(tanggal) <= 7 THEN 'Minggu ke-1'
-                WHEN DAY(tanggal) <= 14 THEN 'Minggu ke-2'
-                WHEN DAY(tanggal) <= 21 THEN 'Minggu ke-3'
+                WHEN {$dayExpression} <= 7 THEN 'Minggu ke-1'
+                WHEN {$dayExpression} <= 14 THEN 'Minggu ke-2'
+                WHEN {$dayExpression} <= 21 THEN 'Minggu ke-3'
                 ELSE 'Minggu ke-4'
             END AS minggu")
             ->joinSiswa()
             ->where('siswa.id_akun', Auth::user()->id_akun)
             ->when($selectedMonth, function ($query, $selectedMonth) {
-                $query->whereMonth('tanggal', $selectedMonth);
+                $query->whereMonth('presensi_siswa.tanggal', $selectedMonth);
             })
-            ->when($selectedWeek, function ($query, $selectedWeek) {
-                $query->whereRaw('
-                    CASE
-                        WHEN DAY(tanggal) > 21 AND ? = 4 THEN 1
-                        WHEN DAY(tanggal) > 14 AND ? = 3 THEN 1
-                        WHEN DAY(tanggal) > 7 AND ? = 2 THEN 1
-                        WHEN DAY(tanggal) <= 7 AND ? = 1 THEN 1
-                        ELSE 0
-                    END = 1
-                ', [$selectedWeek, $selectedWeek, $selectedWeek, $selectedWeek]);
+            ->when($selectedWeek, function ($query, $selectedWeek) use ($dayExpression) {
+                $query->whereRaw("{$dayExpression} BETWEEN ? AND ?", match ((int) $selectedWeek) {
+                    1 => [1, 7],
+                    2 => [8, 14],
+                    3 => [15, 21],
+                    4 => [22, 31],
+                    default => [1, 0],
+                });
             })
             ->get();
     }

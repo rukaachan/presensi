@@ -1,5 +1,6 @@
 @extends('group.layout')
-@section('judul', 'Edit Kelas')
+@section('judul', 'Edit kelas')
+@section('page-description', 'Perbarui tingkatan, program keahlian, nama, atau status kelas.')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Kelas</h1>
@@ -75,24 +76,15 @@
                             @enderror
                         </div>
                         <div class="mt-3">
-                            <button id="kembali"
+                            <button type="button" id="kembali"
                                 class="btn text-decoration-underline text-light fw-bold rounded-3"
-                                style="background-color: #14C345">KEMBALI</button>
+                                style="background-color: #14C345">Kembali</button>
                             <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                                style="background-color: #F9812A ">SUBMIT</button>
+                                style="background-color: #F9812A ">Simpan</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

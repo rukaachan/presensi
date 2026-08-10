@@ -137,7 +137,7 @@
         <h3>Daftar Siswa</h3>
         <br>
 
-        <table class="table table-bordered DataTable">
+        <table class="table table-bordered">
             <thead class="thead table-dark">
                 <tr class="">
                     <th scope="col">No</th>
@@ -176,55 +176,16 @@
             </tbody>
         </table>
         <div class="mt-3 mb-5">
-            <button id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #14C345; width: 150px;">KEMBALI</button>
+            <button type="button" id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #14C345; width: 150px;">Kembali</button>
             <a href="{{ url('tata-usaha/edit-kelas/'.$kelas->id_kelas) }}" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #F9812A; width: 200px;">EDIT KELAS</a>
-            <button class="btnHapus btn btn-danger text-decoration-underline text-light fw-bold rounded-3"
-                style="width: 150px;"  idHapus="{{ $kelas->id_kelas }}">HAPUS KELAS</button>
-            <a href="{{ route('tata-usaha.pengurus-kelas.create', ['kelas' => '{{ $kelas->id_kelas }}']) }}" class="btn btn-primary text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #F9812A; width: 200px;">Edit kelas</a>
+            <button type="button" class="btn btn-danger text-decoration-underline text-light fw-bold rounded-3"
+                style="width: 150px;" data-delete-url="{{ route('tata-usaha.kelas.destroy') }}"
+                data-delete-field="id_kelas" data-delete-id="{{ $kelas->id_kelas }}"
+                data-delete-title="Hapus kelas ini?" data-delete-message="Siswa dan relasi kelas akan ikut terdampak.">Hapus kelas</button>
+            <a href="{{ route('tata-usaha.pengurus-kelas.create', ['kelas' => $kelas->id_kelas]) }}" class="btn btn-primary text-decoration-underline text-light fw-bold rounded-3"
                 style="width: 200px;">TAMBAH PENGURUS</a>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('.container').on('click', '.btnHapus', function(a) {
-            a.preventDefault();
-            let idHapus = $(this).closest('.btnHapus').attr('idHapus');
-            swal.fire({
-                title: "Apakah anda yakin?",
-                text: "Anda tidak dapat mengembalikkan nya lagi!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                confirmButtonText: "Ya, Hapus!",
-                cancelButtonColor: "#d33",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        type: 'DELETE',
-                        url: '/tata-usaha/hapus-kelas',
-                        data: {
-                            id_kelas: idHapus,
-                            _token: "{{ csrf_token() }}"
-                        },
-                        success: function(data) {
-                            if (data.success) {
-                                swal.fire('Berhasil di hapus!', '', 'success').then(function() {
-                                    //Refresh Halaman
-                                    window.location.href = "http://localhost:8000/tata-usaha/kelas";
-                                });
-                            }
-                        }
-                    });
-                }
-                });
-            });
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class PresensiSiswa extends Model
 {
@@ -21,10 +24,27 @@ class PresensiSiswa extends Model
     protected function casts(): array
     {
         return [
-            'tanggal' => 'date',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    protected function tanggal(): Attribute
+    {
+        return Attribute::make(
+            get: static fn (mixed $value) => $value === null ? null : Carbon::parse((string) $value),
+            set: static function (mixed $value): ?string {
+                if ($value === null) {
+                    return null;
+                }
+
+                if ($value instanceof CarbonInterface) {
+                    return $value->toDateString();
+                }
+
+                return Carbon::parse((string) $value)->toDateString();
+            },
+        );
     }
 
     public function siswa(): BelongsTo

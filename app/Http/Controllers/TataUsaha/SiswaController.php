@@ -65,7 +65,7 @@ class SiswaController extends Controller
 
     public function createSiswa(Kelas $kelas, Siswa $siswa)
     {
-        $jenisKelamin = ['laki-Laki', 'perempuan'];
+        $jenisKelamin = ['laki-laki', 'perempuan'];
 
         $kelas = $kelas
             ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
@@ -88,7 +88,7 @@ class SiswaController extends Controller
             'angkatan' => 'required',
             'username' => 'required',
             'password' => 'required',
-            'foto_siswa' => 'required',
+            'foto_siswa' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
         $data_siswa = [
             'nis' => $data['nis'],
@@ -97,7 +97,7 @@ class SiswaController extends Controller
             'jenis_kelamin' => $data['jenis_kelamin'],
             'nomer_hp' => $data['nomer_hp'],
             'angkatan' => $data['angkatan'],
-            'foto_siswa' => $data['foto_siswa'],
+            'status_siswa' => 'aktif',
         ];
 
         $data_siswa['status_jabatan'] = 'siswa';
@@ -119,7 +119,7 @@ class SiswaController extends Controller
             $foto_file->move(public_path('siswa'), $foto_nama);
             $data_siswa['foto_siswa'] = $foto_nama;
         } else {
-            return back()->with('error', 'Data pengurus kelas gagal ditambahkan');
+            return back()->withInput()->with('error', 'Foto siswa gagal diunggah.');
         }
 
         $siswa->create($data_siswa);

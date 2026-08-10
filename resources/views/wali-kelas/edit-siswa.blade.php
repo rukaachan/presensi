@@ -1,5 +1,5 @@
 @extends('group.layout')
-@section('judul', 'Edit Data Diri Siswa')
+@section('judul', 'Edit data siswa')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Data Diri Siswa</h1>
@@ -20,7 +20,7 @@
                             @error('nama_siswa')
                                 <div class="text-danger p-0 m-0">{{ $message }}</div>
                             @enderror
-                            <label for="nama_siswa">Nama Siswa</label>
+                            <label for="nama_siswa">Nama siswa</label>
                             <input type="text" class="form-control @error('nama_siswa') is-invalid @enderror"
                                 name="nama_siswa" value="{{ $siswa->nama_siswa }}">
                         </div>
@@ -62,14 +62,14 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="nomer_hp">Nomer Hp</label>
+                            <label for="nomer_hp">Nomor HP</label>
                             <input type="number" class="form-control" name="nomer_hp" value="{{ $siswa->nomer_hp }}">
                         </div>
                         <div class="form-group">
                             @error('foto_siswa')
                                 <div class="text-danger p-0 m-0">{{ $message }}</div>
                             @enderror
-                            <label>Foto Profil Siswa</label>
+                            <label>Foto profil siswa</label>
                             <input type="file" class="form-control @error('foto_siswa') is-invalid @enderror"
                                 name="foto_siswa" />
                         </div>
@@ -79,9 +79,9 @@
                         <div class="mt-3">
                             <a href="{{ url()->previous() }}"
                                 class="btn text-decoration-underline text-light fw-bold rounded-3"
-                                style="background-color: #14C345">KEMBALI</a>
+                                style="background-color: #14C345">Kembali</a>
                             <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                                style="background-color: #F9812A ">SUBMIT</button>
+                                style="background-color: #F9812A ">Simpan</button>
                         </div>
                     </form>
                 </div>

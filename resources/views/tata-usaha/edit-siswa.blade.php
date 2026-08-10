@@ -1,5 +1,6 @@
 @extends('group.layout')
-@section('judul', 'Edit Siswa')
+@section('judul', 'Edit siswa')
+@section('page-description', 'Perbarui data akun, kelas, dan profil siswa tanpa kehilangan riwayatnya.')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Siswa</h1>
@@ -16,7 +17,7 @@
                             <input type="number" class="form-control @error('nis') is-invalid @enderror" name="nis" value="{{ $siswa->nis }}">
                         </div>
                         <div class="form-group">
-                            <label for="nama_siswa">Nama Siswa</label>
+                            <label for="nama_siswa">Nama siswa</label>
                             <input type="text" class="form-control @error('nama_siswa') is-invalid @enderror" name="nama_siswa" value="{{ $siswa->nama_siswa }}">
                         </div>
                         <div class="form-group">
@@ -47,7 +48,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="nomer_hp">Nomer Hp</label>
+                            <label for="nomer_hp">Nomor HP</label>
                             <input type="number" class="form-control @error('nomer_hp') is-invalid @enderror" name="nomer_hp" value="{{ $siswa->nomer_hp }}">
                         </div>
                         <div class="form-group">
@@ -63,31 +64,22 @@
                             <input type="password" class="form-control" name="password">
                         </div>
                         <div class="form-group">
-                            <label>Foto Profil Siswa</label>
+                            <label>Foto profil siswa</label>
                             <input type="file" class="form-control" name="foto_siswa" />
                         </div>
                         <div class="form-group">
                             <input type="hidden" name="id_siswa" value="{{ $siswa->id_siswa }}" />
                         </div>
                         <div class="mt-3">
-                            <button id="kembali"
+                            <button type="button" id="kembali"
                                 class="btn text-decoration-underline text-light fw-bold rounded-3"
-                                style="background-color: #14C345">KEMBALI</button>
+                                style="background-color: #14C345">Kembali</button>
                             <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                                style="background-color: #F9812A ">SUBMIT</button>
+                                style="background-color: #F9812A ">Simpan</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

@@ -1,75 +1,41 @@
 @extends('layout.layout')
 @section('judul', 'Dashboard Wali Kelas')
-<style>
-    .block {
-        padding: 100px;
-        text-align: center;
-        border-radius: 20px
-    }
 
-    .color-text {
-        color: #F9812A;
-    }
-</style>
-@section('sidenav')
-    <nav id="sidebarMenu" class="collapse d-lg-block sidebar bg-white">
-        <div class="position-sticky">
-            <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="{{ url('wali-kelas/dashboard') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active"
-                    aria-current="true">
-                    <img src="{{ asset('img/icon_Home_White.svg') }}" alt=""><span>Dashboard</span>
-                </a>
-                <a href="{{ url('wali-kelas/akun-pengurus-kelas') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Profile.svg') }}" alt=""><span>Pengurus Kelas</span>
-                </a>
-                <a href="{{ url('wali-kelas/akun-siswa') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Profile.svg') }}" alt=""><span>Siswa</span>
-                </a>
-                <a href="{{ url('wali-kelas/presensi-siswa') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Location.svg') }}" alt=""><span>Presensi</span>
-                </a>
-                <a href="{{ url('wali-kelas/logs') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Book.svg') }}" alt=""><span>Logs</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-@endsection
 @section('isi')
-    <div class="container mt-1 mx-5">
-        <div class="row">
-            <div class="col-sm-4 mb-5 mx-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalSiswa }}</div>
-                    <span class="fs-3 text-nowrap">Jumlah Siswa</span>
-                </div>
-            </div>
-            <div class="col-sm-4 mb-5 mx-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalHadir }}</div>
-                    <span class="fs-3 text-nowrap">Jumlah Hadir</span>
-                </div>
-            </div>
+    <section class="dashboard-intro" aria-labelledby="dashboard-title">
+        <div>
+            <p class="eyebrow">Ringkasan kelas</p>
+            <h2 id="dashboard-title">Pahami kondisi kelas setiap hari.</h2>
+            <p>Tinjau presensi hari ini, kelola pengurus kelas, dan jaga data siswa tetap terbaru.</p>
         </div>
+        <a class="quick-action rounded-md bg-accent text-accent-foreground ring-1 ring-accent" href="{{ route('wali-kelas.presensi-siswa.index') }}">
+            <span>Tinjau presensi</span>
+            <i class="ph-bold ph-arrow-right" aria-hidden="true"></i>
+        </a>
+    </section>
 
-        <div class="row">
-            <div class="col-sm-4 mb-5 mx-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalIzin }}</div>
-                    <span class="fs-3 text-nowrap">Jumlah Sakit/Izin</span>
-                </div>
-            </div>
-            <div class="col-sm-4 mb-5 mx-5">
-                <div class="block bg-white">
-                    <span class="fs-1 color-text fw-bold">{{ $totalAlpha }}</span>
-                    <span class="fs-3 text-nowrap">Jumlah Tidak Hadir</span>
-                </div>
-            </div>
-        </div>
+    @php
+        $metrics = [
+            ['label' => 'Siswa', 'value' => $totalSiswa, 'meta' => 'Di kelas Anda', 'tone' => 'metric-card--dark'],
+            ['label' => 'Hadir', 'value' => $totalHadir, 'meta' => 'Presensi tercatat', 'tone' => 'metric-card--green'],
+            ['label' => 'Izin', 'value' => $totalIzin, 'meta' => 'Ketidakhadiran disetujui', 'tone' => ''],
+            ['label' => 'Alpha', 'value' => $totalAlpha, 'meta' => 'Perlu tindak lanjut', 'tone' => ''],
+        ];
+    @endphp
+
+    <div class="metric-grid metric-grid--four">
+        @foreach ($metrics as $metric)
+            <article class="metric-card rounded-lg bg-card text-card-foreground ring-1 ring-border {{ $metric['tone'] }}">
+                <span class="metric-label">{{ $metric['label'] }}</span>
+                <strong class="metric-value">{{ $metric['value'] }}</strong>
+                <p class="metric-meta">{{ $metric['meta'] }}</p>
+            </article>
+        @endforeach
     </div>
+
+    @include('layout.partials.metric-bars', [
+        'metrics' => $metrics,
+        'visualTitle' => 'Keseimbangan kelas',
+        'visualDescription' => 'Bandingkan siswa hadir, izin, dan alpha dalam ruang kelas Anda.',
+    ])
 @endsection

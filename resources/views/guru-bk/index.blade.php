@@ -1,51 +1,40 @@
 @extends('layout.layout')
-@section('judul', 'Dashboard Guru Bk')
-<style>
-    .block {
-        padding: 100px;
-        text-align: center;
-        border-radius: 20px
-    }
+@section('judul', 'Dashboard Guru BK')
 
-    .color-text {
-        color: #F9812A;
-    }
-</style>
-@section('sidenav')
-    <nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse bg-white">
-        <div class="position-sticky">
-            <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="{{ route('guru-bk.dashboard') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
-                    <img src="{{ asset('img/icon_Home_White.svg')}}" alt=""><span>Dashboard</span>
-                </a>
-                <a href="{{ route('guru-bk.presensi.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
-                    <img src="{{ asset('img/icon_Location.svg')}}" alt=""><span>Presensi</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-@endsection
 @section('isi')
-    <div class="container mt-3">
-        <div class="row">
-            <div class="col-sm-4 mb-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalHadir }}</div>
-                    <span class="fs-3 text-nowrap">Hadir</span>
-                </div>
-            </div>
-            <div class="col-sm-4 mb-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalIzin }}</div>
-                    <span class="fs-3 text-nowrap">Tidak Hadir</span>
-                </div>
-            </div>
-            <div class="col-sm-4 mb-5">
-                <div class="block bg-white">
-                    <div class="fs-1 color-text fw-bold">{{ $totalAlpha }}</div>
-                    <span class="fs-3 text-nowrap">Sakit / Izin</span>
-                </div>
-            </div>
+    <section class="dashboard-intro" aria-labelledby="dashboard-title">
+        <div>
+            <p class="eyebrow">Ringkasan pendampingan siswa</p>
+            <h2 id="dashboard-title">Baca kondisi presensi sejak awal.</h2>
+            <p>Pantau pola kehadiran dan buka detail ketika seorang siswa membutuhkan tindak lanjut.</p>
         </div>
+        <a class="quick-action rounded-md bg-accent text-accent-foreground ring-1 ring-accent" href="{{ route('guru-bk.presensi.index') }}">
+            <span>Lihat presensi</span>
+            <i class="ph-bold ph-arrow-right" aria-hidden="true"></i>
+        </a>
+    </section>
+
+    @php
+        $metrics = [
+            ['label' => 'Hadir', 'value' => $totalHadir, 'meta' => 'Presensi tercatat', 'tone' => 'metric-card--dark'],
+            ['label' => 'Izin', 'value' => $totalIzin, 'meta' => 'Ketidakhadiran disetujui', 'tone' => 'metric-card--green'],
+            ['label' => 'Alpha', 'value' => $totalAlpha, 'meta' => 'Perlu tindak lanjut', 'tone' => ''],
+        ];
+    @endphp
+
+    <div class="metric-grid">
+        @foreach ($metrics as $metric)
+            <article class="metric-card rounded-lg bg-card text-card-foreground ring-1 ring-border {{ $metric['tone'] }}">
+                <span class="metric-label">{{ $metric['label'] }}</span>
+                <strong class="metric-value">{{ $metric['value'] }}</strong>
+                <p class="metric-meta">{{ $metric['meta'] }}</p>
+            </article>
+        @endforeach
     </div>
+
+    @include('layout.partials.metric-bars', [
+        'metrics' => $metrics,
+        'visualTitle' => 'Sinyal pendampingan',
+        'visualDescription' => 'Gunakan perbandingan ini untuk menentukan prioritas tindak lanjut.',
+    ])
 @endsection

@@ -1,50 +1,72 @@
 @extends('layout.layout')
-@section('judul', 'Dashboard Siswa')
+@section('judul', 'Catat presensi')
+@section('page-description', 'Ambil satu foto untuk mengirimkan catatan kehadiran hari ini.')
 
-@section('sidenav')
-    <nav id="sidebarMenu" class="collapse d-lg-block sidebar bg-white">
-        <div class="position-sticky">
-            <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="{{ route('siswa.dashboard') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4"
-                    aria-current="true">
-                    <img src="{{ asset('img/icon_Home.svg') }}" alt=""><span>Dashboard</span>
-                </a>
-                <a href="{{ route('siswa.presensi.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
-                    <img src="{{ asset('img/icon_Location_White.svg') }}" alt=""><span>Presensi</span>
-                </a>
-                <a href="{{ route('siswa.histori.index') }}" class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Location.svg') }}"><span>Histori</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-@endsection
 @section('isi')
-    <div class="container mt-5">
-            <form method="POST" action="{{ route('siswa.webcam.capture') }}" id="presensiForm">
-            @csrf
-            <div class="row">
-                <div class="col-md-6">
-                    <div id="my_camera"></div>
-                    <br />
-                    <input type="button" value="Take Snapshot" onClick="takeSnapshotWithCheck()"
-                        class="bg-primary p-2 text-white rounded-md" style="margin-left: 10px">
-                    <input type="hidden" name="image" class="image-tag">
-                    <input type="hidden" name="id_siswa" value="{{ $siswa->id_siswa }}">
-                </div>
-                <div class="col-md-6">
-                    <div id="results">Hasil foto akan berada disini</div>
-                </div>
-                <div class="col-md-12 text-center">
-                    <br />
-                    <button class="btn btn-success px-3 submit-btn" disabled>Submit</button>
-                </div>
+    @if (! $siswa?->id_siswa)
+        <section class="operations-empty-state account-empty-state" aria-labelledby="capture-unavailable-title">
+            <i class="ph-bold ph-user-circle-dashed" aria-hidden="true"></i>
+            <strong id="capture-unavailable-title">Profil siswa belum siap</strong>
+            <p>Akun ini belum terhubung dengan data siswa. Hubungi Tata Usaha sebelum mencatat presensi.</p>
+        </section>
+    @else
+    <section class="capture-page" aria-labelledby="capture-title">
+        <header class="capture-heading">
+            <div>
+                <p class="eyebrow">Presensi hari ini</p>
+                <h2 id="capture-title">Satu foto. Satu catatan yang jelas.</h2>
+                <p>Pastikan wajah terlihat jelas dan gunakan pencahayaan yang cukup sebelum mengirim.</p>
             </div>
+            <span class="capture-step"><span>01</span> Ambil foto</span>
+        </header>
+
+        <form method="POST" action="{{ route('siswa.webcam.capture') }}" id="presensiForm" class="capture-form">
+            @csrf
+            <div class="capture-layout">
+                <section class="capture-stage" aria-labelledby="camera-title">
+                    <div class="capture-stage-heading">
+                        <div>
+                            <span class="capture-stage-index">A</span>
+                            <h3 id="camera-title">Kamera</h3>
+                        </div>
+                        <span class="capture-hint">Hidup</span>
+                    </div>
+                    <div id="my_camera" aria-label="Pratinjau kamera"></div>
+                    <button type="button" class="capture-button" onClick="takeSnapshotWithCheck()">
+                        <i class="ph-bold ph-camera" aria-hidden="true"></i>
+                        Ambil foto
+                    </button>
+                </section>
+
+                <section class="capture-stage capture-stage--review" aria-labelledby="review-title">
+                    <div class="capture-stage-heading">
+                        <div>
+                            <span class="capture-stage-index">B</span>
+                            <h3 id="review-title">Pratinjau</h3>
+                        </div>
+                        <span class="capture-hint">Tinjau sebelum kirim</span>
+                    </div>
+                    <div id="results">Foto yang Anda ambil akan muncul di sini.</div>
+                </section>
+            </div>
+
+            <input type="hidden" name="image" class="image-tag">
+            <input type="hidden" name="id_siswa" value="{{ $siswa->id_siswa }}">
+
+            <footer class="capture-footer">
+                <p><i class="ph-bold ph-shield-check" aria-hidden="true"></i> Foto hanya digunakan sebagai bukti presensi.</p>
+                <button type="submit" class="btn btn-primary submit-btn" disabled>
+                    <span class="submit-label">Kirim presensi</span>
+                    <i class="ph-bold ph-arrow-right" aria-hidden="true"></i>
+                </button>
+            </footer>
         </form>
-    </div>
+    </section>
+    @endif
 @endsection
 
 @section('footer')
+    @if ($siswa?->id_siswa)
     <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.25/webcam.min.js"></script>
     <script>
         Webcam.set({
@@ -56,77 +78,57 @@
 
         Webcam.attach('#my_camera');
 
-        function takeSnapshotWithCheck() {
-            var hasSubmitted = '{{ session('snapshot_taken') }}';
-            if (hasSubmitted) {
-                showErrorMessage("Anda sudah melakukan Presensi.");
-            } else {
-                checkIfSnapshotAlreadyTaken();
-            }
-        }
-
-        function checkIfSnapshotAlreadyTaken() {
-            $.ajax({
-                url: '{{ route('siswa.webcam.check_snapshot') }}',
-                type: 'POST',
-                data: {
-                    id_siswa: '{{ $siswa->id_siswa }}',
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(result) {
-                    if (result.exists) {
-                        showErrorMessage("Anda sudah melakukan Presensi.");
-                    } else {
-                        take_snapshot();
-                        enableSubmitButton();
-                        @php session(['snapshot_taken' => true]) @endphp
-                        setTimeout(function() {
-                            // Destroy after 13 hours
-                            @php session()->forget('snapshot_taken') @endphp
-                        }, 13 * 60 * 60 * 1000);
-
-                    }
-                }
+        async function takeSnapshotWithCheck() {
+            const payload = new URLSearchParams({
+                id_siswa: '{{ $siswa->id_siswa }}',
+                _token: '{{ csrf_token() }}'
             });
+
+            try {
+                const response = await fetch('{{ route('siswa.webcam.check_snapshot') }}', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: payload
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error('Snapshot check failed');
+                }
+
+                if (result.exists) {
+                    showErrorMessage('Presensi untuk hari ini sudah tercatat.');
+                    return;
+                }
+
+                take_snapshot();
+                document.querySelector('.submit-btn').removeAttribute('disabled');
+            } catch (error) {
+                showErrorMessage('Pemeriksaan presensi gagal. Silakan coba lagi.');
+            }
         }
 
         function take_snapshot() {
             Webcam.snap(function(data_uri) {
-                $(".image-tag").val(data_uri);
-                document.getElementById('results').innerHTML = '<img src="' + data_uri + '"/>';
+                document.querySelector('.image-tag').value = data_uri;
+                document.getElementById('results').innerHTML = '<img src="' + data_uri + '" alt="Pratinjau foto presensi">';
             });
-        }
-
-        function enableSubmitButton() {
-            document.querySelector('.submit-btn').removeAttribute('disabled');
         }
 
         function showErrorMessage(message) {
-            swal.fire({
-                icon: "error",
-                title: "Terjadi Kesalahan",
+            window.swal.fire({
+                icon: 'error',
+                title: 'Presensi belum dikirim',
                 text: message,
-                showCancelButton: false,
-                showConfirmButton: false
+                confirmButtonText: 'Mengerti'
             });
         }
-    </script>
 
-    <script type="module">
-        $('.submit-btn').click(function(event) {
-            event.preventDefault();
-
-            swal.fire({
-                title: "Berhasil!",
-                text: "Berhasil Melakukan Presensi!",
-                icon: "success",
-                showCancelButton: false,
-                showConfirmButton: false
-            });
-
-            setTimeout(function() {
-                document.getElementById('presensiForm').submit();
-            }, 2000);
+        document.getElementById('presensiForm').addEventListener('submit', function() {
+            const button = this.querySelector('.submit-btn');
+            button.disabled = true;
+            button.querySelector('.submit-label').textContent = 'Menyimpan...';
         });
     </script>
+    @endif
 @endsection

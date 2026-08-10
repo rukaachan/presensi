@@ -48,7 +48,15 @@ class WaliKelasController extends Controller
 
     public function detailProfil(Request $request, Guru $guru, Kelas $kelas)
     {
-        $id_guru = $guru->where('id_akun', $request->id)->first()->id_guru;
+        $guruRecord = $guru->where('id_akun', $request->id)->first();
+        if ($guruRecord === null) {
+            return view('layout.profile-unavailable', [
+                'message' => 'Akun wali kelas ini belum terhubung dengan data guru.',
+                'backUrl' => route('wali-kelas.dashboard'),
+            ]);
+        }
+
+        $id_guru = $guruRecord->id_guru;
         $data = [
             'guru' => $guru
                 ->join('akun', 'guru.id_akun', '=', 'akun.id_akun')
@@ -186,11 +194,17 @@ class WaliKelasController extends Controller
 
     public function detailKelasPengurus(Request $request, Kelas $kelas, Siswa $siswa, PengurusKelas $pengurus)
     {
+        $user = Auth::user()->id_akun;
         $data = [
-            'kelas' => $kelas
-                ->join('siswa', 'kelas.id_kelas', '=', 'siswa.id_kelas')
+            'pengurus' => $pengurus
+                ->join('siswa', 'pengurus_kelas.id_siswa', '=', 'siswa.id_siswa')
+                ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
+                ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas')
                 ->where('kelas.id_kelas', $request->id)
-                ->get(),
+                ->where('guru.id_akun', $user)
+                ->select('pengurus_kelas.id_pengurus', 'siswa.id_siswa', 'siswa.nis', 'siswa.nama_siswa', 'siswa.status_jabatan', 'kelas.nama_kelas')
+                ->simplePaginate(25)
+                ->withQueryString(),
         ];
 
         return view('wali-kelas.pengurus-kelas', $data);

@@ -1,187 +1,34 @@
 @extends('layout.layout')
-@section('judul', 'Dashboard Kelas')
-<style>
-    .block {
-        padding: 100px;
-        text-align: center;
-        border-radius: 20px
-    }
+@section('judul', 'Validasi kelas')
+@section('page-description', 'Tentukan status validasi pada setiap catatan kehadiran kelas.')
 
-    .color-text {
-        color: #F9812A;
-    }
-
-    .table-container {
-        width: 100%;
-    }
-</style>
-@section('sidenav')
-    <nav id="sidebarMenu" class="collapse d-lg-block sidebar bg-white">
-        <div class="position-sticky">
-            <div class="list-group list-group-flush mx-3 mt-4">
-                <a href="{{ route('pengurus-kelas.dashboard') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4" aria-current="true">
-                    <img src="{{ asset('img/icon_Home.svg') }}" alt=""><span>Dashboard</span>
-                </a>
-                <a href="{{ route('pengurus-kelas.presensi.index') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Location.svg') }}" alt=""><span>Presensi</span>
-                </a>
-                <a href="{{ route('pengurus-kelas.kelas.index') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4 active">
-                    <img src="{{ asset('img/icon_Kelas_White.svg') }}" alt=""></i><span>Kelas</span>
-                </a>
-                <a href="{{ route('pengurus-kelas.histori.index') }}"
-                    class="list-group-item list-group-item-action py-2 ripple flex items-center gap-4">
-                    <img src="{{ asset('img/icon_Location.svg') }}" alt=""><span>Histori</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-@endsection
 @section('isi')
-    <div class="mt-4 ml-4 pt-3 container-md bg-white">
-        <form id="validasiForm" action="{{ url('kelas') }}" method="GET">
-            @csrf
-            <div class="d-flex">
-                <div class="w-25">
-                    <label for="waktu_validasi">Pilih Waktu Validasi:</label>
-                    <select id="waktu_validasi" name="waktu_validasi" class="form-control">
-                        <option value="istirahat_pertama">Istirahat Pertama</option>
-                        <option value="istirahat_kedua">Istirahat Kedua</option>
-                        <option value="istirahat_ketiga">Istirahat Ketiga</option>
-                    </select>
-                </div>
-                <div class="ml-auto mt-4 mx-5">
-                    <button type="submit" class="bg-primary p-2 text-white rounded-md"
-                        style="width: 100px;">Submit</button>
-
-                    <button class="btn btn-success text-nowrap" id="downloadPDF">Download
-                        PDF</button>
-                </div>
-            </div>
-            <div class="table-container mt-4">
-                <table class="table table-bordered DataTable">
-                    <thead class="thead table-dark">
-                        <tr>
-                            <th scope="col">No</th>
-                            <th scope="col">NIS</th>
-                            <th scope="col">Nama Siswa</th>
-                            <th scope="col" colspan="4" class="text-center">Kehadiran</th>
+    <section class="validation-page" aria-labelledby="validation-title">
+        <header class="workspace-intro"><div><p class="eyebrow">Kontrol kelas</p><h2 id="validation-title">Validasi catatan yang masuk.</h2><p>Pilih satu waktu istirahat, lalu tetapkan status untuk setiap siswa.</p></div><span class="workspace-index">02 / Pengurus</span></header>
+        <form id="validasiForm" action="{{ route('pengurus-kelas.kelas.validasi.update') }}" method="POST" class="validation-form">@csrf<div class="validation-toolbar"><label for="waktu_validasi"><span>Waktu validasi</span><select id="waktu_validasi" name="waktu_validasi" class="form-select"><option value="istirahat_pertama">Istirahat pertama</option><option value="istirahat_kedua">Istirahat kedua</option><option value="istirahat_ketiga">Istirahat ketiga</option></select></label><div class="validation-actions"><button type="button" class="btn btn-secondary" id="downloadPDF"><i class="ph-bold ph-download-simple" aria-hidden="true"></i> Unduh PDF</button><button type="submit" class="btn btn-primary"><i class="ph-bold ph-check" aria-hidden="true"></i> Simpan validasi</button></div></div><div class="table-scroll" tabindex="0" aria-label="Tabel validasi kelas"><table class="table table-bordered validation-table"><thead><tr><th scope="col">No</th><th scope="col">Siswa</th><th scope="col" colspan="4">Pilih status</th></tr><tr><th></th><th></th><th>Hadir</th><th>Izin</th><th>Alpha</th><th>Pulang</th></tr></thead><tbody>
+                    @forelse ($data as $item)
+                        @php $rowIndex = $loop->iteration; @endphp
+                        <tr class="data-row" data-waktu-validasi="{{ $item->waktu_validasi }}">
+                            <td>{{ $rowIndex }}</td>
+                            <td>
+                                <strong class="table-primary-text">{{ $item->nama_siswa }}</strong>
+                                <span class="validation-student-meta">{{ $item->nis }}</span>
+                                <input type="hidden" name="id_pengurus[{{ $rowIndex }}]" value="{{ $item->id_pengurus }}">
+                                <input type="hidden" name="id_presensi[{{ $rowIndex }}]" value="{{ $item->id_presensi }}">
+                            </td>
+                            @foreach (['hadir', 'izin', 'alpha', 'pulang'] as $status)
+                                <td>
+                                    <label class="validation-choice">
+                                        <input type="radio" name="status_validasi[{{ $rowIndex }}][]" value="{{ $status }}" {{ $item->status_validasi === $status ? 'checked' : '' }}>
+                                        <span>{{ ucfirst($status) }}</span>
+                                    </label>
+                                </td>
+                            @endforeach
                         </tr>
-                        <tr class="text-center">
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th>Hadir</th>
-                            <th>Izin</th>
-                            <th>Alpha</th>
-                            <th>Pulang</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach ($data as $i)
-                            <tr class="data-row" data-waktu-validasi="{{ $i->waktu_validasi }}">
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $i->nis }}</td>
-                                <td>{{ $i->nama_siswa }}</td>
-                                <td class="text-center">
-                                    <input type="checkbox" class="single-checkbox"
-                                        name="status_validasi[{{ $loop->iteration }}][]" value="hadir"
-                                        id="checkbox_hadir_{{ $loop->iteration }}"
-                                        {{ $i->status_validasi === 'hadir' ? 'checked' : '' }}>
-                                    <input type="hidden" name="id_pengurus[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_pengurus }}">
-                                    <input type="hidden" name="id_presensi[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_presensi }}">
-                                </td>
-                                <td class="text-center">
-                                    <input type="checkbox" class="single-checkbox"
-                                        name="status_validasi[{{ $loop->iteration }}][]" value="izin"
-                                        id="checkbox_izin_{{ $loop->iteration }}"
-                                        {{ $i->status_validasi === 'izin' ? 'checked' : '' }}>
-                                    <input type="hidden" name="id_pengurus[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_pengurus }}">
-                                    <input type="hidden" name="id_presensi[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_presensi }}">
-                                </td>
-                                <td class="text-center">
-                                    <input type="checkbox" class="single-checkbox"
-                                        name="status_validasi[{{ $loop->iteration }}][]" value="alpha"
-                                        id="checkbox_alpha_{{ $loop->iteration }}"
-                                        {{ $i->status_validasi === 'alpha' ? 'checked' : '' }}>
-                                    <input type="hidden" name="id_pengurus[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_pengurus }}">
-                                    <input type="hidden" name="id_presensi[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_presensi }}">
-                                </td>
-                                <td class="text-center">
-                                    <input type="checkbox" class="single-checkbox"
-                                        name="status_validasi[{{ $loop->iteration }}][]" value="pulang"
-                                        id="checkbox_pulang_{{ $loop->iteration }}"
-                                        {{ $i->status_validasi === 'pulang' ? 'checked' : '' }}>
-                                    <input type="hidden" name="id_pengurus[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_pengurus }}">
-                                    <input type="hidden" name="id_presensi[{{ $loop->iteration }}]"
-                                        value="{{ $i->id_presensi }}">
-                                </td>
-
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </form>
-    </div>
-
+                    @empty
+                        <tr><td colspan="6"><div class="table-empty-state"><i class="ph-bold ph-seal-check" aria-hidden="true"></i><strong>Belum ada catatan untuk divalidasi</strong><span>Catatan presensi kelas akan muncul setelah dikirim.</span></div></td></tr>
+                    @endforelse
+                </tbody></table></div></form>
+    </section>
 @endsection
-
-@section('footer')
-    <script type="module">
-        $(document).ready(function() {
-            function filterTable() {
-                var selectedValue = $('#waktu_validasi').val();
-
-                if (selectedValue === "") {
-                    $('table.DataTable tbody tr').show();
-                    return;
-                }
-
-                var rowsToShow = $('table.DataTable tbody tr[data-waktu-validasi="' + selectedValue + '"]');
-
-                if (rowsToShow.length > 0) {
-                    $('table.DataTable tbody tr').hide();
-                    rowsToShow.show();
-                }
-            }
-
-            filterTable();
-
-            $('#waktu_validasi').change(function() {
-                filterTable();
-            });
-
-            $('#validasiForm').submit(function(event) {
-                if (event.originalEvent) {
-                    $(this).attr('action', 'update-validasi');
-                    $(this).attr('method', 'POST');
-                }
-            });
-
-            $('.single-checkbox').on('change', function() {
-                var checkboxes = $(this).closest('tr').find('.single-checkbox');
-
-                checkboxes.prop('checked', false);
-
-                $(this).prop('checked', true);
-            });
-            $('#downloadPDF').on('click', function(e) {
-                e.preventDefault();
-                $("#validasiForm").attr('action', '/pengurus-kelas/kelas-pdf');
-                $("#validasiForm").submit();
-            })
-
-        });
-    </script>
-@endsection
+@section('footer')<script type="module">const form = document.getElementById('validasiForm'); const rows = [...document.querySelectorAll('.data-row')]; const filterRows = () => { const value = document.getElementById('waktu_validasi').value; rows.forEach((row) => { row.hidden = row.dataset.waktuValidasi && row.dataset.waktuValidasi !== value; }); }; document.getElementById('waktu_validasi')?.addEventListener('change', filterRows); filterRows(); document.getElementById('downloadPDF')?.addEventListener('click', () => { form.action = '{{ route('pengurus-kelas.kelas.pdf') }}'; form.submit(); });</script>@endsection

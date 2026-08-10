@@ -7,20 +7,16 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Seed reference data everywhere and demo data only in safe environments.
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
-        $this->call(AkunSeeder::class);
-        $this->call(GuruSeeder::class);
-        $this->call(GuruPiketSeeder::class);
-        $this->call(GuruBkSeeder::class);
-        $this->call(JurusanSeeder::class);
-        $this->call(KelasSeeder::class);
-        $this->call(SiswaSeeder::class);
-        $this->call(PresensiSeeder::class);
-        $this->call(PengurusKelasSeeder::class);
-        $this->call(TataUsahaSeeder::class);
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(DemoDatabaseSeeder::class);
+
+            return;
+        }
+
+        $this->call(ReferenceSeeder::class);
     }
 }

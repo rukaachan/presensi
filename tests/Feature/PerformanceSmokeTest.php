@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Akun;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\PerformanceFixture;
@@ -60,6 +61,30 @@ class PerformanceSmokeTest extends TestCase
                 ->assertViewHas('totalHadir', 4)
                 ->assertViewHas('totalIzin', 2)
                 ->assertViewHas('totalAlpha', 2);
+        }
+    }
+
+    public function test_tata_usaha_dashboard_reports_daily_operations(): void
+    {
+        Carbon::setTestNow('2026-01-02 08:00:00');
+        Cache::flush();
+
+        try {
+            $this->actingAs($this->account('tata_usaha'))
+                ->get('/tata-usaha/dashboard')
+                ->assertOk()
+                ->assertViewHas('dailySummary', function (array $summary): bool {
+                    return $summary['totalRecorded'] === 2
+                        && $summary['totalMissing'] === 0
+                        && $summary['totalPresent'] === 2
+                        && $summary['classesComplete'] === 1;
+                })
+                ->assertViewHas('classReadiness', function ($classes): bool {
+                    return $classes->count() === 1
+                        && $classes->first()->completionRate === 100;
+                });
+        } finally {
+            Carbon::setTestNow();
         }
     }
 

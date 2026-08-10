@@ -1,5 +1,5 @@
 @extends('group.layout')
-@section('judul', 'Dashboard Wali Kelas')
+@section('judul', 'Edit pengurus kelas')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Akun Pengurus Kelas</h1>
@@ -12,7 +12,7 @@
                     <form action="update" method="POST">
                         @csrf
                         <div class="form-group">
-                            <label>Nama Siswa</label>
+                            <label>Nama siswa</label>
                             <input type="text" class="form-control" name="nama_siswa" value="{{ $pengurus->nama_siswa }}"
                                 disabled id="">
                             <input type="hidden" class="form-control" name="id_pengurus"
@@ -24,9 +24,9 @@
                         </div> <br><br>
                         <a href="{{ url('wali-kelas/akun-pengurus-kelas') }}"
                             class="btn text-decoration-underline text-light fw-bold rounded-3"
-                            style="background-color: #14C345">KEMBALI</a>
+                            style="background-color: #14C345">Kembali</a>
                         <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                            style="background-color: #F9812A ">SUBMIT</button>
+                            style="background-color: #F9812A ">Simpan</button>
                     </form>
                 </div>
             </div>

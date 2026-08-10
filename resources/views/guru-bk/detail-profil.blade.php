@@ -15,8 +15,12 @@
     <img class="" src="{{ asset('img/group_guru.png') }}" width="100%" height="250px" alt="" style="">
     <div class="container">
         <div class="d-flex justify-content-center">
-            <img src="{{ asset('guru/' . $guru->foto_guru) }}" width="200px" height="200px" alt="Profile" class="mt-4 mb-2"
-                style="border-radius: 100px;" alt="Guru" />
+            @include('layout.partials.entity-avatar', [
+                'directory' => 'guru',
+                'filename' => $guru->foto_guru,
+                'alt' => 'Foto ' . $guru->nama_guru,
+                'variant' => 'profile',
+            ])
         </div>
         <div class="card mt-3  bg-white">
             <div class="card-body">
@@ -50,17 +54,8 @@
             </div>
         </div>
         <div class="mt-3 mb-5">
-            <button id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #14C345; width: 150px;">KEMBALI</button>
+            <button type="button" id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #14C345; width: 150px;">Kembali</button>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

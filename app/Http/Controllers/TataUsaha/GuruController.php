@@ -116,50 +116,46 @@ class GuruController extends Controller
         }
 
         $status = $request->input('status');
-        if ($status == 'Guru BK') {
-            $id_akun = $akun->create([
-                'id_role' => 5,
-                'username' => $data['username'],
-                'password' => Hash::make($data['password']),
-            ]);
-            $sukses = DB::statement('CALL CreateGuruBK(?,?,?,?)', [$id_akun->id_akun, $data['nama_guru'], $foto_nama, $role_akun->nama_role]);
-            if ($sukses) {
-                notify()->success('Data guru telah berhasil ditambahkan', 'Success');
+        $roleId = match ($status) {
+            'Guru BK' => 5,
+            'Guru Piket' => 4,
+            default => 2,
+        };
 
-                return redirect('tata-usaha/akun-guru');
-            } else {
-                return back()->with('error', 'Data guru gagal ditambahkan');
-            }
+        try {
+            DB::transaction(function () use ($akun, $guru, $guruBk, $guruPiket, $kelas, $data, $foto_nama, $status, $roleId): void {
+                $account = $akun->newQuery()->create([
+                    'id_role' => $roleId,
+                    'username' => $data['username'],
+                    'password' => Hash::make($data['password']),
+                ]);
+
+                $teacher = $guru->newQuery()->create([
+                    'id_akun' => $account->id_akun,
+                    'nama_guru' => $data['nama_guru'],
+                    'foto_guru' => $foto_nama,
+                    'pembuat' => $data['pembuat'],
+                ]);
+
+                if ($status === 'Guru BK') {
+                    $guruBk->newQuery()->create(['id_guru' => $teacher->id_guru]);
+                } elseif ($status === 'Guru Piket') {
+                    $guruPiket->newQuery()->create(['id_guru' => $teacher->id_guru]);
+                } else {
+                    $kelas->newQuery()
+                        ->where('id_kelas', $status)
+                        ->update(['id_wali_kelas' => $teacher->id_guru]);
+                }
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Data guru gagal ditambahkan');
         }
-        if ($status == 'Guru Piket') {
-            $id_akun = $akun->create([
-                'id_role' => 4,
-                'username' => $data['username'],
-                'password' => Hash::make($data['password']),
-            ]);
-            $sukses = DB::statement('CALL CreateGuruPiket(?,?,?,?)', [$id_akun->id_akun, $data['nama_guru'], $foto_nama, $role_akun->nama_role]);
-            if ($sukses) {
-                notify()->success('Data guru telah berhasil ditambahkan', 'Success');
 
-                return redirect('tata-usaha/akun-guru');
-            } else {
-                return back()->with('error', 'Data guru gagal ditambahkan');
-            }
-        } else {
-            $id_akun = $akun->create([
-                'id_role' => 2,
-                'username' => $data['username'],
-                'password' => Hash::make($data['password']),
-            ]);
-            $sukses = DB::statement('CALL CreateWaliKelas(?,?,?,?,?)', [$id_akun->id_akun, $data['nama_guru'], $foto_nama, $role_akun->nama_role, $request->input('status')]);
-            if ($sukses) {
-                notify()->success('Data guru telah berhasil berhasil ditambahkan', 'Success');
+        notify()->success('Data guru telah berhasil ditambahkan', 'Success');
 
-                return redirect('tata-usaha/akun-guru');
-            } else {
-                return back()->with('error', 'Data guru gagal ditambahkan');
-            }
-        }
+        return redirect('tata-usaha/akun-guru');
     }
 
     public function editGuru(Request $request, Kelas $kelas, Guru $guru, GuruBk $guruBk, GuruPiket $guruPiket)

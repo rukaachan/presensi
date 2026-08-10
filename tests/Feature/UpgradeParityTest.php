@@ -200,6 +200,7 @@ class UpgradeParityTest extends TestCase
                 $table->unsignedBigInteger('id_guru_bk')->nullable();
                 $table->string('nama_kelas');
                 $table->integer('tingkatan')->nullable();
+                $table->string('status_kelas')->default('aktif');
             });
         }
 
@@ -237,6 +238,7 @@ class UpgradeParityTest extends TestCase
                 $table->unsignedBigInteger('id_kelas')->nullable();
                 $table->string('nis')->nullable();
                 $table->string('nama_siswa');
+                $table->string('status_siswa')->default('aktif');
             });
         }
 
@@ -253,11 +255,25 @@ class UpgradeParityTest extends TestCase
             });
         }
 
+        if (! Schema::hasTable('validasi')) {
+            Schema::create('validasi', function (Blueprint $table): void {
+                $table->id('id_validasi');
+                $table->unsignedBigInteger('id_presensi');
+                $table->string('status_validasi')->default('tidak_ada');
+            });
+        }
+
         if (! Schema::hasTable('logs')) {
             Schema::create('logs', function (Blueprint $table): void {
                 $table->id('id_logs');
                 $table->unsignedBigInteger('id_akun')->nullable();
                 $table->string('aktifitas')->nullable();
+                $table->string('aktor')->nullable();
+                $table->string('aksi')->nullable();
+                $table->string('record')->nullable();
+                $table->date('tanggal')->nullable();
+                $table->time('jam')->nullable();
+                $table->string('status')->default('aktif');
                 $table->timestamps();
             });
         }

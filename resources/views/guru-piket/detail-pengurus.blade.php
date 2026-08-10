@@ -20,8 +20,12 @@
     <div class="container">
         <h1 class="mt-4 text-center">Detail Pengurus Kelas</h1>
         <div class="d-flex justify-content-center">
-            <img src="{{ asset('siswa/' . $pengurus->foto_siswa) }}" width="200px" height="200px" alt="Profile" class="mt-4 mb-2"
-                style="border-radius: 100px;" alt="Siswa" />
+            @include('layout.partials.entity-avatar', [
+                'directory' => 'siswa',
+                'filename' => $pengurus->foto_siswa,
+                'alt' => 'Foto ' . $pengurus->nama_siswa,
+                'variant' => 'profile',
+            ])
         </div>
         <div class="card mt-3  bg-white">
             <div class="card-body">
@@ -35,7 +39,7 @@
                             Nama Pengurus
                         </div>
                         <div class="col-sm">
-                            Nomer Hp
+                            Nomor HP
                         </div>
                         <div class="col-sm">
                             Jenis Kelamin
@@ -105,17 +109,8 @@
             </div>
         </div>
         <div class="mt-3 mb-5">
-            <button id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
-                style="background-color: #14C345; width: 150px;">KEMBALI</button>
+            <button type="button" id="kembali" class="btn text-decoration-underline text-light fw-bold rounded-3"
+                style="background-color: #14C345; width: 150px;">Kembali</button>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

@@ -1,5 +1,6 @@
 @extends('group.layout')
-@section('judul', 'Edit Jurusan')
+@section('judul', 'Edit jurusan')
+@section('page-description', 'Perbarui nama program keahlian tanpa mengubah kelas yang terhubung.')
 @section('isi')
     <div class="pt-2">
         <h1 class="fw-bold mt-3 text-center">Edit Jurusan</h1>
@@ -23,23 +24,14 @@
                         @enderror
                         <br>
                         <br>
-                        <button id="kembali"
+                        <button type="button" id="kembali"
                             class="btn text-decoration-underline text-light fw-bold rounded-3"
-                            style="background-color: #14C345">KEMBALI</button>
+                            style="background-color: #14C345">Kembali</button>
                         <button type="submit" class="btn text-decoration-underline text-light fw-bold"
-                            style="background-color: #F9812A ">SUBMIT</button>
+                            style="background-color: #F9812A ">Simpan</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-@section('footer')
-    <script type="module">
-        $(document).ready(function(){
-            $('#kembali').on('click', function(){
-                window.history.back();
-            });
-        });
-    </script>
 @endsection

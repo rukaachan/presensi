@@ -9,6 +9,7 @@ use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SiswaController extends Controller
@@ -38,7 +39,15 @@ class SiswaController extends Controller
 
     public function detailProfil(Request $request, Siswa $siswa, PengurusKelas $pengurus)
     {
-        $id_siswa = $siswa->where('id_akun', $request->id)->first()->id_siswa;
+        $siswaRecord = $siswa->where('id_akun', $request->id)->first();
+        if ($siswaRecord === null) {
+            return view('layout.profile-unavailable', [
+                'message' => 'Akun siswa ini belum terhubung dengan data siswa.',
+                'backUrl' => route('siswa.dashboard'),
+            ]);
+        }
+
+        $id_siswa = $siswaRecord->id_siswa;
         $data = [
             'siswa' => $siswa
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
@@ -52,8 +61,14 @@ class SiswaController extends Controller
 
     public function checkSnapshot(Request $request)
     {
-        $exists = PresensiSiswa::where('id_siswa', $request->input('id_siswa'))
-            ->whereDate('created_at', today())
+        $siswa = Siswa::where('id_siswa', $request->input('id_siswa'))
+            ->where('id_akun', Auth::user()->id_akun)
+            ->first();
+
+        abort_unless($siswa !== null, 403);
+
+        $exists = PresensiSiswa::where('id_siswa', $siswa->id_siswa)
+            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
             ->exists();
 
         return response()->json(['exists' => $exists]);
@@ -75,6 +90,12 @@ class SiswaController extends Controller
         $siswa = Siswa::where('id_akun', Auth::user()->id_akun)->first();
         if (! $siswa) {
             return back()->withInput()->with('error', 'Data siswa tidak ditemukan.');
+        }
+
+        if (PresensiSiswa::where('id_siswa', $siswa->id_siswa)
+            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+            ->exists()) {
+            return back()->withInput()->with('error', 'Presensi untuk hari ini sudah tercatat.');
         }
 
         $image = $request->input('image');
@@ -109,7 +130,7 @@ class SiswaController extends Controller
             'jam_masuk' => now('Asia/Jakarta')->format('H:i:s'),
             'tanggal' => now('Asia/Jakarta')->toDateString(),
             'status_kehadiran' => 'hadir',
-            'keterangan' => 'Some description',
+            'keterangan' => 'Presensi melalui kamera',
             'pembuat' => 'Siswa',
         ]);
 
@@ -149,28 +170,30 @@ class SiswaController extends Controller
         $selectedMonth = $request->input('bulan', null);
         $selectedWeek = $request->input('minggu', null);
 
-        return $presensi::selectRaw("*, 
+        $dayExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%d', presensi_siswa.tanggal) AS INTEGER)"
+            : 'DAY(presensi_siswa.tanggal)';
+
+        return $presensi::selectRaw("*,
             CASE
-                WHEN DAY(tanggal) <= 7 THEN 'Minggu ke-1'
-                WHEN DAY(tanggal) <= 14 THEN 'Minggu ke-2'
-                WHEN DAY(tanggal) <= 21 THEN 'Minggu ke-3'
+                WHEN {$dayExpression} <= 7 THEN 'Minggu ke-1'
+                WHEN {$dayExpression} <= 14 THEN 'Minggu ke-2'
+                WHEN {$dayExpression} <= 21 THEN 'Minggu ke-3'
                 ELSE 'Minggu ke-4'
             END AS minggu")
             ->joinSiswa()
             ->where('siswa.id_akun', Auth::user()->id_akun)
             ->when($selectedMonth, function ($query, $selectedMonth) {
-                $query->whereMonth('tanggal', $selectedMonth);
+                $query->whereMonth('presensi_siswa.tanggal', $selectedMonth);
             })
-            ->when($selectedWeek, function ($query, $selectedWeek) {
-                $query->whereRaw('
-                    CASE
-                        WHEN DAY(tanggal) > 21 AND ? = 4 THEN 1
-                        WHEN DAY(tanggal) > 14 AND ? = 3 THEN 1
-                        WHEN DAY(tanggal) > 7 AND ? = 2 THEN 1
-                        WHEN DAY(tanggal) <= 7 AND ? = 1 THEN 1
-                        ELSE 0
-                    END = 1
-                ', [$selectedWeek, $selectedWeek, $selectedWeek, $selectedWeek]);
+            ->when($selectedWeek, function ($query, $selectedWeek) use ($dayExpression) {
+                $query->whereRaw("{$dayExpression} BETWEEN ? AND ?", match ((int) $selectedWeek) {
+                    1 => [1, 7],
+                    2 => [8, 14],
+                    3 => [15, 21],
+                    4 => [22, 31],
+                    default => [1, 0],
+                });
             })
             ->get();
     }

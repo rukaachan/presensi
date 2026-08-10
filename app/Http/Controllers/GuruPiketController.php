@@ -33,7 +33,15 @@ class GuruPiketController extends Controller
 
     public function detailProfil(Request $request, Guru $guru)
     {
-        $id_guru = $guru->where('id_akun', $request->id)->first()->id_guru;
+        $guruRecord = $guru->where('id_akun', $request->id)->first();
+        if ($guruRecord === null) {
+            return view('layout.profile-unavailable', [
+                'message' => 'Akun guru piket ini belum terhubung dengan data guru.',
+                'backUrl' => route('guru-piket.dashboard'),
+            ]);
+        }
+
+        $id_guru = $guruRecord->id_guru;
         $data = [
             'guru' => $guru
                 ->join('akun', 'guru.id_akun', '=', 'akun.id_akun')

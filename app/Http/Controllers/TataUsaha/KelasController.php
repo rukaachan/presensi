@@ -47,7 +47,7 @@ class KelasController extends Controller
         $data = [
             'kelas' => $kelas
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
-                ->join('guru', 'kelas.id_wali_kelas', '=', 'guru.id_guru')
+                ->leftJoin('guru', 'kelas.id_wali_kelas', '=', 'guru.id_guru')
                 ->where('id_kelas', $request->id)->first(),
             'ketua' => $siswa
                 ->where('id_kelas', $request->id)
