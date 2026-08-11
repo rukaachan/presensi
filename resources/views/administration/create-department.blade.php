@@ -1,0 +1,3 @@
+@extends('layout.layout')
+@section('title', __('pages.create_department'))
+@section('content')<section class="workspace-page"><form method="POST" action="{{ route('administration.departments.store') }}" class="card p-4">@csrf<label for="name" class="form-label">{{ __('labels.name') }}</label><input id="name" name="name" class="form-control" value="{{ old('name') }}" required>@error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror<div class="mt-4"><button class="btn btn-primary">{{ __('actions.save') }}</button><a href="{{ route('administration.departments.index') }}" class="btn btn-secondary">{{ __('actions.cancel') }}</a></div></form></section>@endsection

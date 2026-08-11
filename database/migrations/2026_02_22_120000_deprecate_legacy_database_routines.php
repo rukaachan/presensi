@@ -36,7 +36,7 @@ return new class extends Migration
             return;
         }
 
-        foreach (['CreateGuruBK', 'CreateGuruPiket', 'CreateWaliKelas'] as $procedure) {
+        foreach (['CreateTeacherBK', 'CreateDutyTeacher', 'CreateWaliClassroom'] as $procedure) {
             DB::unprepared("DROP PROCEDURE IF EXISTS {$procedure}");
         }
 
@@ -46,7 +46,7 @@ return new class extends Migration
             'CountPiketTeachers',
             'CountClasses',
             'CountClassMembers',
-            'CountWaliKelas',
+            'CountWaliClassroom',
             'CountStudents',
             'CountTotalStudents',
             'CountStatus',

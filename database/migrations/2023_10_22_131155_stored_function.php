@@ -25,7 +25,7 @@ return new class extends Migration
             'CountPiketTeachers',
             'CountClasses',
             'CountClassMembers',
-            'CountWaliKelas',
+            'CountWaliClassroom',
             'CountStudents',
             'CountTotalStudents',
             'CountStatus',

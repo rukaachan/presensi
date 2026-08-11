@@ -6,10 +6,10 @@ use App\Authorization\AttendanceScope;
 use App\Authorization\RoleCode;
 use App\Domain\Attendance\AttendanceState;
 use App\Domain\Attendance\LeaveRequestState;
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\AttendanceRecord;
 use App\Models\LeaveRequest;
-use App\Models\Siswa;
+use App\Models\Student;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
@@ -24,19 +24,19 @@ class LeaveRequestService
     ) {}
 
     public function submit(
-        Akun $actor,
-        Siswa $student,
+        Account $actor,
+        Student $student,
         string $reason,
         ?AttendanceRecord $attendanceRecord = null,
         ?array $attachment = null,
     ): LeaveRequest {
         if (RoleCode::forAccount($actor) !== RoleCode::STUDENT
-            || (int) $student->id_akun !== (int) $actor->getKey()) {
-            throw new AuthorizationException('Only the student can submit their own leave request.');
+            || (int) $student->account_id !== (int) $actor->getKey()) {
+            throw new AuthorizationException(__('leave.errors.submit_forbidden'));
         }
 
         if (blank($reason)) {
-            throw new InvalidArgumentException('A leave reason is required.');
+            throw new InvalidArgumentException(__('leave.errors.reason_required'));
         }
 
         return $this->database->transaction(function () use ($actor, $student, $reason, $attendanceRecord, $attachment): LeaveRequest {
@@ -65,24 +65,24 @@ class LeaveRequestService
     }
 
     public function decide(
-        Akun $actor,
+        Account $actor,
         LeaveRequest $request,
         LeaveRequestState $targetState,
         ?string $decisionNote = null,
     ): LeaveRequest {
         if (! in_array($targetState, [LeaveRequestState::APPROVED, LeaveRequestState::REJECTED], true)) {
-            throw new InvalidArgumentException('Leave decisions must approve or reject the request.');
+            throw new InvalidArgumentException(__('leave.errors.decision_invalid'));
         }
 
         $student = $request->relationLoaded('student')
             ? $request->student
             : $request->student()->first();
-        if (! $student instanceof Siswa || ! $this->canReview($actor, $student)) {
-            throw new AuthorizationException('The actor cannot decide this leave request.');
+        if (! $student instanceof Student || ! $this->canReview($actor, $student)) {
+            throw new AuthorizationException(__('leave.errors.review_forbidden'));
         }
 
         if ($targetState === LeaveRequestState::REJECTED && blank($decisionNote)) {
-            throw new InvalidArgumentException('A rejection note is required.');
+            throw new InvalidArgumentException(__('leave.errors.rejection_note_required'));
         }
 
         $stateAttribute = $request->getAttribute('state');
@@ -90,7 +90,7 @@ class LeaveRequestService
             ? $stateAttribute
             : LeaveRequestState::from((string) $stateAttribute);
         if ($currentState !== LeaveRequestState::SUBMITTED) {
-            throw new InvalidArgumentException('Only submitted leave requests can be decided.');
+            throw new InvalidArgumentException(__('leave.errors.not_submitted'));
         }
 
         return $this->database->transaction(function () use ($actor, $request, $targetState, $decisionNote): LeaveRequest {
@@ -136,7 +136,7 @@ class LeaveRequestService
         });
     }
 
-    private function canReview(Akun $actor, Siswa $student): bool
+    private function canReview(Account $actor, Student $student): bool
     {
         $role = RoleCode::forAccount($actor);
 

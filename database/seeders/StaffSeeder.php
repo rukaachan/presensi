@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Guru;
-use App\Models\GuruBk;
-use App\Models\GuruPiket;
-use App\Models\TataUsaha;
+use App\Models\AdministrationStaff;
+use App\Models\CounselingTeacher;
+use App\Models\DutyTeacher;
+use App\Models\Teacher;
 use Database\Seeders\Support\DemoSeeder;
 
 class StaffSeeder extends DemoSeeder
@@ -13,48 +13,51 @@ class StaffSeeder extends DemoSeeder
     public function run(): void
     {
         foreach ([
-            ['wali.demo', 'Raka Pratama'],
-            ['wali.002', 'Dewi Lestari'],
-            ['wali.003', 'Bagus Santoso'],
-            ['wali.004', 'Nadia Permata'],
-            ['wali.005', 'Fajar Hidayat'],
-            ['wali.006', 'Sinta Maharani'],
+            ['homeroom.demo', 'Raka Pratama'],
+            ['homeroom.002', 'Dewi Lestari'],
+            ['homeroom.003', 'Bagus Santoso'],
+            ['homeroom.004', 'Nadia Permata'],
+            ['homeroom.005', 'Fajar Hidayat'],
+            ['homeroom.006', 'Sinta Maharani'],
         ] as [$username, $name]) {
-            $account = $this->account($username, 'Wali Kelas');
+            $account = $this->account($username, 'homeroom_teacher');
 
-            Guru::query()->updateOrCreate(
-                ['id_akun' => $account->getKey()],
+            Teacher::query()->updateOrCreate(
+                ['account_id' => $account->getKey()],
                 [
-                    'nama_guru' => $name,
-                    'foto_guru' => 'guru.jpg',
-                    'pembuat' => $this->creator(),
+                    'name' => $name,
+                    'photo_path' => 'teacher.jpg',
+                    'created_by_label' => $this->creator(),
                 ],
             );
         }
 
-        $piketAccount = $this->account('piket.demo', 'Guru Piket');
-        $piketGuru = Guru::query()->updateOrCreate(
-            ['id_akun' => $piketAccount->getKey()],
+        $piketAccount = $this->account('duty.demo', 'duty_teacher');
+        $piketTeacher = Teacher::query()->updateOrCreate(
+            ['account_id' => $piketAccount->getKey()],
             [
-                'nama_guru' => 'Arif Setiawan',
-                'foto_guru' => 'guru.jpg',
-                'pembuat' => $this->creator(),
+                'name' => 'Arif Setiawan',
+                'photo_path' => 'teacher.jpg',
+                'created_by_label' => $this->creator(),
             ],
         );
-        GuruPiket::query()->updateOrCreate(['id_guru' => $piketGuru->getKey()], []);
+        DutyTeacher::query()->updateOrCreate(['teacher_id' => $piketTeacher->getKey()]);
 
-        $bkAccount = $this->account('bk.demo', 'Guru BK');
-        $bkGuru = Guru::query()->updateOrCreate(
-            ['id_akun' => $bkAccount->getKey()],
+        $bkAccount = $this->account('counseling.demo', 'counseling_teacher');
+        $bkTeacher = Teacher::query()->updateOrCreate(
+            ['account_id' => $bkAccount->getKey()],
             [
-                'nama_guru' => 'Maya Anggraini',
-                'foto_guru' => 'guru.jpg',
-                'pembuat' => $this->creator(),
+                'name' => 'Maya Anggraini',
+                'photo_path' => 'teacher.jpg',
+                'created_by_label' => $this->creator(),
             ],
         );
-        GuruBk::query()->updateOrCreate(['id_guru' => $bkGuru->getKey()], []);
+        CounselingTeacher::query()->updateOrCreate(['teacher_id' => $bkTeacher->getKey()]);
 
-        $tuAccount = $this->account('tu.demo', 'Tata Usaha');
-        TataUsaha::query()->updateOrCreate(['id_akun' => $tuAccount->getKey()], []);
+        $tuAccount = $this->account('administrator.demo', 'administrator');
+        AdministrationStaff::query()->updateOrCreate(
+            ['account_id' => $tuAccount->getKey()],
+            ['name' => 'Tata usaha', 'photo_path' => null],
+        );
     }
 }

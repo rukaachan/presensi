@@ -18,7 +18,6 @@ class AttendanceSessionFactory extends Factory
             'code' => fake()->unique()->slug(2),
             'label' => fake()->sentence(3),
             'kind' => 'special',
-            'legacy_code' => null,
             'required' => false,
             'active' => true,
             'window_start' => null,

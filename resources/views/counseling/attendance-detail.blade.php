@@ -1,0 +1,3 @@
+@extends('layout.layout')
+@section('title', __('pages.attendance_detail'))
+@section('content')<section class="workspace-page"><div class="card p-4"><h3>{{ $attendanceRecord->student?->name }}</h3><p>{{ optional($attendanceRecord->attendance_date)->format('d/m/Y') }} · {{ $attendanceRecord->session?->label ? __($attendanceRecord->session->label) : '—' }}</p><p>{{ __('labels.status') }}: {{ __('attendance.'.$attendanceRecord->state->value) }}</p><p>{{ $attendanceRecord->notes ?: '—' }}</p>@include('layout.partials.attendance-evidence',['record'=>$attendanceRecord])<a href="{{ route('counseling.attendance.index') }}" class="btn btn-secondary mt-3">{{ __('actions.back') }}</a></div></section>@endsection

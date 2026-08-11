@@ -10,7 +10,7 @@
     <img src="{{ asset($avatarRelativePath) }}" alt="{{ $alt ?? '' }}" class="entity-avatar entity-avatar--{{ $avatarVariant }}">
 @else
     <span class="entity-avatar entity-avatar--{{ $avatarVariant }} entity-avatar--fallback" role="img"
-        aria-label="{{ $alt ?? 'Foto tidak tersedia' }}">
+        aria-label="{{ $alt ?? __('common.profile_unavailable') }}">
         <i class="ph-bold ph-user" aria-hidden="true"></i>
     </span>
 @endif

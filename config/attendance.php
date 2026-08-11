@@ -23,16 +23,14 @@ return [
     |
     | The daily check-in is always required. Other session events are optional
     | and can be activated or scheduled without changing the attendance route
-    | contract. Legacy validation codes are retained for compatibility with the
-    | existing `validasi.waktu_validasi` column.
+    | contract.
     |
     */
     'sessions' => [
         [
             'code' => 'daily_check_in',
-            'label' => 'Check-in harian',
+            'label' => 'attendance.sessions.daily_check_in',
             'kind' => 'check_in',
-            'legacy_code' => null,
             'required' => true,
             'active' => true,
             'window_start' => '05:00:00',
@@ -42,9 +40,8 @@ return [
         ],
         [
             'code' => 'break_1',
-            'label' => 'Istirahat pertama',
+            'label' => 'attendance.sessions.break_1',
             'kind' => 'break',
-            'legacy_code' => 'istirahat_pertama',
             'required' => false,
             'active' => true,
             'window_start' => null,
@@ -54,9 +51,8 @@ return [
         ],
         [
             'code' => 'break_2',
-            'label' => 'Istirahat kedua',
+            'label' => 'attendance.sessions.break_2',
             'kind' => 'break',
-            'legacy_code' => 'istirahat_kedua',
             'required' => false,
             'active' => true,
             'window_start' => null,
@@ -66,9 +62,8 @@ return [
         ],
         [
             'code' => 'break_3',
-            'label' => 'Istirahat ketiga',
+            'label' => 'attendance.sessions.break_3',
             'kind' => 'break',
-            'legacy_code' => 'istirahat_ketiga',
             'required' => false,
             'active' => true,
             'window_start' => null,
@@ -78,9 +73,8 @@ return [
         ],
         [
             'code' => 'check_out',
-            'label' => 'Check-out harian',
+            'label' => 'attendance.sessions.check_out',
             'kind' => 'check_out',
-            'legacy_code' => null,
             'required' => false,
             'active' => false,
             'window_start' => '14:00:00',
@@ -90,9 +84,8 @@ return [
         ],
         [
             'code' => 'special',
-            'label' => 'Sesi khusus',
+            'label' => 'attendance.sessions.special',
             'kind' => 'special',
-            'legacy_code' => null,
             'required' => false,
             'active' => false,
             'window_start' => null,

@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\AuditEvent;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class AuditEventService
 {
@@ -18,7 +19,7 @@ class AuditEventService
     public function record(
         string $action,
         Model|string|null $subject = null,
-        ?Akun $actor = null,
+        ?Account $actor = null,
         ?array $before = null,
         ?array $after = null,
         ?array $metadata = null,
@@ -26,9 +27,11 @@ class AuditEventService
     ): AuditEvent {
         return AuditEvent::query()->create([
             'actor_id' => $actor?->getKey(),
-            'actor_type' => $actor === null ? null : $actor::class,
+            'actor_type' => $actor === null ? null : 'account',
             'action' => $action,
-            'subject_type' => $subject instanceof Model ? $subject::class : $subject,
+            'subject_type' => $subject instanceof Model
+                ? Str::singular($subject->getTable())
+                : $subject,
             'subject_id' => $subject instanceof Model ? (string) $subject->getKey() : null,
             'before' => $before,
             'after' => $after,

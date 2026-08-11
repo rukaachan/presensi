@@ -1,183 +1,139 @@
 <?php
 
+use App\Http\Controllers\Administration\AttendanceController as AdministrationAttendanceController;
+use App\Http\Controllers\Administration\AuditController as AdministrationAuditController;
+use App\Http\Controllers\Administration\ClassOfficerController as AdministrationClassOfficerController;
+use App\Http\Controllers\Administration\ClassroomController as AdministrationClassroomController;
+use App\Http\Controllers\Administration\DepartmentController as AdministrationDepartmentController;
+use App\Http\Controllers\Administration\StudentController as AdministrationStudentController;
+use App\Http\Controllers\Administration\TeacherController as AdministrationTeacherController;
+use App\Http\Controllers\AdministrationController;
 use App\Http\Controllers\AttendanceEvidenceController;
-use App\Http\Controllers\GuruBkController;
-use App\Http\Controllers\GuruPiketController;
-use App\Http\Controllers\OtentikasiController;
-use App\Http\Controllers\PengurusKelasController;
-use App\Http\Controllers\SiswaController;
-use App\Http\Controllers\TataUsaha\GuruController as TataUsahaGuruController;
-use App\Http\Controllers\TataUsaha\JurusanController as TataUsahaJurusanController;
-use App\Http\Controllers\TataUsaha\KelasController as TataUsahaKelasController;
-use App\Http\Controllers\TataUsaha\LogController as TataUsahaLogController;
-use App\Http\Controllers\TataUsaha\PengurusController as TataUsahaPengurusController;
-use App\Http\Controllers\TataUsaha\PresensiController as TataUsahaPresensiController;
-use App\Http\Controllers\TataUsaha\SiswaController as TataUsahaSiswaController;
-use App\Http\Controllers\TataUsahaController;
-use App\Http\Controllers\WaliKelasController;
+use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\ClassOfficerController;
+use App\Http\Controllers\CounselingTeacherController;
+use App\Http\Controllers\DutyTeacherController;
+use App\Http\Controllers\HomeroomController;
+use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+Route::get('/', [AuthenticationController::class, 'index'])->name('login');
+Route::post('/', [AuthenticationController::class, 'authenticate']);
+Route::post('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
-Route::get('/', [OtentikasiController::class, 'index'])->name('login');
-Route::post('/', [OtentikasiController::class, 'authenticated']);
-Route::post('/logout', [OtentikasiController::class, 'logout'])->name('logout');
-
-Route::middleware(['auth'])->group(function () {
-
+Route::middleware('auth')->group(function (): void {
     Route::get('attendance/evidence/{attendanceRecord}', [AttendanceEvidenceController::class, 'show'])
         ->name('attendance.evidence');
 
-    Route::prefix('tata-usaha')->middleware('akses:6')->group(function () {
-        // DASHBOARD
-        Route::get('dashboard', [TataUsahaController::class, 'index'])->name('tata-usaha.dashboard');
+    Route::prefix('administration')->middleware('role:administrator')->group(function (): void {
+        Route::get('dashboard', [AdministrationController::class, 'index'])->name('administration.dashboard');
 
-        // Akun Guru
-        Route::get('jurusan', [TataUsahaJurusanController::class, 'showJurusan'])->name('tata-usaha.jurusan.index');
-        Route::get('tambah-jurusan', [TataUsahaJurusanController::class, 'createJurusan'])->name('tata-usaha.jurusan.create');
-        Route::post('simpan-jurusan', [TataUsahaJurusanController::class, 'storeJurusan'])->name('tata-usaha.jurusan.store');
-        Route::get('edit-jurusan/{id}', [TataUsahaJurusanController::class, 'editJurusan'])->name('tata-usaha.jurusan.edit');
-        Route::post('edit-jurusan/update', [TataUsahaJurusanController::class, 'updateJurusan'])->name('tata-usaha.jurusan.update');
-        Route::delete('hapus-jurusan', [TataUsahaJurusanController::class, 'destroyJurusan'])->name('tata-usaha.jurusan.destroy');
+        Route::get('departments', [AdministrationDepartmentController::class, 'showDepartment'])->name('administration.departments.index');
+        Route::get('departments/create', [AdministrationDepartmentController::class, 'createDepartment'])->name('administration.departments.create');
+        Route::post('departments', [AdministrationDepartmentController::class, 'storeDepartment'])->name('administration.departments.store');
+        Route::get('departments/{id}/edit', [AdministrationDepartmentController::class, 'editDepartment'])->name('administration.departments.edit');
+        Route::put('departments/{id}', [AdministrationDepartmentController::class, 'updateDepartment'])->name('administration.departments.update');
+        Route::delete('departments', [AdministrationDepartmentController::class, 'destroyDepartment'])->name('administration.departments.destroy');
 
-        Route::get('kelas', [TataUsahaKelasController::class, 'showKelas'])->name('tata-usaha.kelas.index');
-        Route::get('detail-kelas/{id}', [TataUsahaKelasController::class, 'detailKelas'])->name('tata-usaha.kelas.detail');
-        Route::get('tambah-kelas', [TataUsahaKelasController::class, 'createKelas'])->name('tata-usaha.kelas.create');
-        Route::post('simpan-kelas', [TataUsahaKelasController::class, 'storeKelas'])->name('tata-usaha.kelas.store');
-        Route::get('edit-kelas/{id}', [TataUsahaKelasController::class, 'editKelas'])->name('tata-usaha.kelas.edit');
-        Route::post('edit-kelas/update', [TataUsahaKelasController::class, 'updateKelas'])->name('tata-usaha.kelas.update');
-        Route::delete('hapus-kelas', [TataUsahaKelasController::class, 'destroyKelas'])->name('tata-usaha.kelas.destroy');
+        Route::get('classrooms', [AdministrationClassroomController::class, 'showClassroom'])->name('administration.classrooms.index');
+        Route::get('classrooms/create', [AdministrationClassroomController::class, 'createClassroom'])->name('administration.classrooms.create');
+        Route::get('classrooms/{id}', [AdministrationClassroomController::class, 'detailClassroom'])->name('administration.classrooms.show');
+        Route::post('classrooms', [AdministrationClassroomController::class, 'storeClassroom'])->name('administration.classrooms.store');
+        Route::get('classrooms/{id}/edit', [AdministrationClassroomController::class, 'editClassroom'])->name('administration.classrooms.edit');
+        Route::put('classrooms/{id}', [AdministrationClassroomController::class, 'updateClassroom'])->name('administration.classrooms.update');
+        Route::delete('classrooms', [AdministrationClassroomController::class, 'destroyClassroom'])->name('administration.classrooms.destroy');
 
-        // Akun Guru
-        Route::get('akun-guru', [TataUsahaGuruController::class, 'showGuru'])->name('tata-usaha.guru.index');
-        Route::get('detail-guru/{id}', [TataUsahaGuruController::class, 'detailGuru'])->name('tata-usaha.guru.detail');
-        Route::get('tambah-guru', [TataUsahaGuruController::class, 'createGuru'])->name('tata-usaha.guru.create');
-        Route::post('simpan-guru', [TataUsahaGuruController::class, 'storeGuru'])->name('tata-usaha.guru.store');
-        Route::get('edit-guru/{id}', [TataUsahaGuruController::class, 'editGuru'])->name('tata-usaha.guru.edit');
-        Route::post('edit-guru/update', [TataUsahaGuruController::class, 'updateGuru'])->name('tata-usaha.guru.update');
-        Route::delete('hapus-guru', [TataUsahaGuruController::class, 'destroyGuru'])->name('tata-usaha.guru.destroy');
+        Route::get('teachers', [AdministrationTeacherController::class, 'showTeacher'])->name('administration.teachers.index');
+        Route::get('teachers/create', [AdministrationTeacherController::class, 'createTeacher'])->name('administration.teachers.create');
+        Route::get('teachers/{id}', [AdministrationTeacherController::class, 'detailTeacher'])->name('administration.teachers.show');
+        Route::post('teachers', [AdministrationTeacherController::class, 'storeTeacher'])->name('administration.teachers.store');
+        Route::get('teachers/{id}/edit', [AdministrationTeacherController::class, 'editTeacher'])->name('administration.teachers.edit');
+        Route::put('teachers/{id}', [AdministrationTeacherController::class, 'updateTeacher'])->name('administration.teachers.update');
+        Route::delete('teachers', [AdministrationTeacherController::class, 'destroyTeacher'])->name('administration.teachers.destroy');
 
-        // PENGURUS KELAS
-        Route::get('akun-pengurus-kelas', [TataUsahaPengurusController::class, 'showPengurus'])->name('tata-usaha.pengurus-kelas.index');
-        Route::get('detail-pengurus-kelas/{id}', [TataUsahaPengurusController::class, 'detailPengurus'])->name('tata-usaha.pengurus-kelas.detail');
-        Route::get('tambah-pengurus-kelas', [TataUsahaPengurusController::class, 'createPengurus'])->name('tata-usaha.pengurus-kelas.create');
-        Route::post('simpan-pengurus-kelas', [TataUsahaPengurusController::class, 'storePengurus'])->name('tata-usaha.pengurus-kelas.store');
-        Route::get('edit-pengurus-kelas/{id}', [TataUsahaPengurusController::class, 'editPengurus'])->name('tata-usaha.pengurus-kelas.edit');
-        Route::post('edit-pengurus-kelas/update', [TataUsahaPengurusController::class, 'updatePengurus'])->name('tata-usaha.pengurus-kelas.update');
-        Route::delete('hapus-pengurus-kelas', [TataUsahaPengurusController::class, 'destroyPengurus'])->name('tata-usaha.pengurus-kelas.destroy');
+        Route::get('class-officers', [AdministrationClassOfficerController::class, 'showClassOfficers'])->name('administration.class-officers.index');
+        Route::get('class-officers/create', [AdministrationClassOfficerController::class, 'createClassOfficer'])->name('administration.class-officers.create');
+        Route::get('class-officers/{id}', [AdministrationClassOfficerController::class, 'detailClassOfficer'])->name('administration.class-officers.show');
+        Route::post('class-officers', [AdministrationClassOfficerController::class, 'storeClassOfficer'])->name('administration.class-officers.store');
+        Route::get('class-officers/{id}/edit', [AdministrationClassOfficerController::class, 'editClassOfficer'])->name('administration.class-officers.edit');
+        Route::put('class-officers/{id}', [AdministrationClassOfficerController::class, 'updateClassOfficer'])->name('administration.class-officers.update');
+        Route::delete('class-officers', [AdministrationClassOfficerController::class, 'destroyClassOfficer'])->name('administration.class-officers.destroy');
 
-        // AKUN SISWA
-        Route::get('akun-siswa', [TataUsahaSiswaController::class, 'showSiswa'])->name('tata-usaha.siswa.index');
-        Route::get('detail-siswa/{id}', [TataUsahaSiswaController::class, 'detailSiswa'])->name('tata-usaha.siswa.detail');
-        Route::get('tambah-siswa', [TataUsahaSiswaController::class, 'createSiswa'])->name('tata-usaha.siswa.create');
-        Route::post('simpan-siswa', [TataUsahaSiswaController::class, 'storeSiswa'])->name('tata-usaha.siswa.store');
-        Route::get('edit-siswa/{id}', [TataUsahaSiswaController::class, 'editSiswa'])->name('tata-usaha.siswa.edit');
-        Route::post('edit-siswa/update', [TataUsahaSiswaController::class, 'updateSiswa'])->name('tata-usaha.siswa.update');
-        Route::delete('hapus-siswa', [TataUsahaSiswaController::class, 'destroySiswa'])->name('tata-usaha.siswa.destroy');
+        Route::get('students', [AdministrationStudentController::class, 'showStudent'])->name('administration.students.index');
+        Route::get('students/create', [AdministrationStudentController::class, 'createStudent'])->name('administration.students.create');
+        Route::get('students/{id}', [AdministrationStudentController::class, 'detailStudent'])->name('administration.students.show');
+        Route::post('students', [AdministrationStudentController::class, 'storeStudent'])->name('administration.students.store');
+        Route::get('students/{id}/edit', [AdministrationStudentController::class, 'editStudent'])->name('administration.students.edit');
+        Route::put('students/{id}', [AdministrationStudentController::class, 'updateStudent'])->name('administration.students.update');
+        Route::delete('students', [AdministrationStudentController::class, 'destroyStudent'])->name('administration.students.destroy');
 
-        // PRESENSI
-        Route::get('presensi', [TataUsahaPresensiController::class, 'showPresensi'])->name('tata-usaha.presensi.index');
-        Route::get('presensi-pdf', [TataUsahaPresensiController::class, 'exportPresensi'])->name('tata-usaha.presensi.pdf');
-        // LOGS
-        Route::get('logs', [TataUsahaLogController::class, 'logs'])->name('tata-usaha.logs.index');
-        Route::post('hapus-logs', [TataUsahaLogController::class, 'deleteLogs'])->name('tata-usaha.logs.delete');
+        Route::get('attendance', [AdministrationAttendanceController::class, 'showAttendance'])->name('administration.attendance.index');
+        Route::get('attendance/pdf', [AdministrationAttendanceController::class, 'exportAttendance'])->name('administration.attendance.pdf');
+        Route::get('audits', [AdministrationAuditController::class, 'showAuditLogs'])->name('administration.audits.index');
+        Route::post('audits/archive', [AdministrationAuditController::class, 'deleteAuditEvents'])->name('administration.audits.archive');
     });
 
-    // GURU BK
-    Route::prefix('guru-bk')->middleware('akses:5')->group(function () {
-        Route::get('dashboard', [GuruBkController::class, 'index'])->name('guru-bk.dashboard');
-        Route::get('detail-profil/{id}', [GuruBKController::class, 'detailProfil'])->name('guru-bk.profil.detail');
-        Route::get('detail-presensi/{id}', [GuruBkController::class, 'detailPresensi'])->name('guru-bk.presensi.detail');
-        Route::get('presensi', [GuruBkController::class, 'showPresensi'])->name('guru-bk.presensi.index');
-        Route::get('presensi-pdf', [GuruBkController::class, 'exportPresensi'])->name('guru-bk.presensi.pdf');
+    Route::prefix('counseling')->middleware('role:counseling_teacher')->group(function (): void {
+        Route::get('dashboard', [CounselingTeacherController::class, 'index'])->name('counseling.dashboard');
+        Route::get('profile/{id}', [CounselingTeacherController::class, 'showProfile'])->name('counseling.profile.show');
+        Route::get('attendance', [CounselingTeacherController::class, 'showAttendance'])->name('counseling.attendance.index');
+        Route::get('attendance/pdf', [CounselingTeacherController::class, 'exportAttendance'])->name('counseling.attendance.pdf');
+        Route::get('attendance/{id}', [CounselingTeacherController::class, 'detailAttendance'])->name('counseling.attendance.show');
     });
 
-    // GURU PIKET
-    Route::prefix('guru-piket')->middleware('akses:4')->group(function () {
-        Route::get('dashboard', [GuruPiketController::class, 'index'])->name('guru-piket.dashboard');
-        Route::get('detail-profil/{id}', [GuruPiketController::class, 'detailProfil'])->name('guru-piket.profil.detail');
-        Route::get('akun-pengurus-kelas', [GuruPiketController::class, 'showPengurus'])->name('guru-piket.pengurus-kelas.index');
-        Route::get('detail-pengurus-kelas/{id}', [GuruPiketController::class, 'detailPengurus'])->name('guru-piket.pengurus-kelas.detail');
-        Route::get('presensi', [GuruPiketController::class, 'showPresensi'])->name('guru-piket.presensi.index');
-        Route::get('detail-presensi/{id}', [GuruPiketController::class, 'detailPresensi'])->name('guru-piket.presensi.detail');
-        Route::get('edit-presensi/{id}', [GuruPiketController::class, 'editPresensi'])->name('guru-piket.presensi.edit');
-        Route::post('edit-presensi/update', [GuruPiketController::class, 'updatePresensi'])->name('guru-piket.presensi.update');
-        Route::get('presensi-pdf', [GuruPiketController::class, 'exportPresensi'])->name('guru-piket.presensi.pdf');
+    Route::prefix('duty-teacher')->middleware('role:duty_teacher')->group(function (): void {
+        Route::get('dashboard', [DutyTeacherController::class, 'index'])->name('duty-teacher.dashboard');
+        Route::get('profile/{id}', [DutyTeacherController::class, 'showProfile'])->name('duty-teacher.profile.show');
+        Route::get('class-officers', [DutyTeacherController::class, 'showClassOfficers'])->name('duty-teacher.class-officers.index');
+        Route::get('class-officers/{id}', [DutyTeacherController::class, 'detailClassOfficer'])->name('duty-teacher.class-officers.show');
+        Route::get('attendance', [DutyTeacherController::class, 'showAttendance'])->name('duty-teacher.attendance.index');
+        Route::get('attendance/pdf', [DutyTeacherController::class, 'exportAttendance'])->name('duty-teacher.attendance.pdf');
+        Route::get('attendance/{id}', [DutyTeacherController::class, 'detailAttendance'])->name('duty-teacher.attendance.show');
+        Route::get('attendance/{id}/edit', [DutyTeacherController::class, 'editAttendance'])->name('duty-teacher.attendance.edit');
+        Route::put('attendance/{id}', [DutyTeacherController::class, 'updateAttendance'])->name('duty-teacher.attendance.update');
     });
 
-    // PENGURUS KELAS
-    Route::prefix('pengurus-kelas')->middleware('akses:3')->group(function () {
-        // DASHBOARD
-        Route::get('dashboard', [PengurusKelasController::class, 'index'])->name('pengurus-kelas.dashboard');
-
-        Route::get('detail-profil/{id}', [PengurusKelasController::class, 'detailProfil'])->name('pengurus-kelas.profil.detail');
-
-        Route::get('histori', [PengurusKelasController::class, 'showHistori'])->name('pengurus-kelas.histori.index');
-
-        // PRESENSI
-        Route::get('/presensi', [PengurusKelasController::class, 'openCam'])->name('pengurus-kelas.presensi.index');
-        Route::post('webcam', [PengurusKelasController::class, 'store'])->name('pengurus-kelas.webcam.capture');
-        Route::post('/webcam/check_snapshot', [PengurusKelasController::class, 'checkSnapshot'])->name('pengurus-kelas.webcam.check_snapshot');
-
-        // VALIDASI
-        Route::get('kelas', [PengurusKelasController::class, 'showKelas'])->name('pengurus-kelas.kelas.index');
-        Route::post('update-validasi', [PengurusKelasController::class, 'updateValidasi'])->name('pengurus-kelas.kelas.validasi.update');
-
-        Route::get('presensi-pdf', [PengurusKelasController::class, 'exportPresensi'])->name('pengurus-kelas.presensi.pdf');
-        Route::get('kelas-pdf', [PengurusKelasController::class, 'exportKelas'])->name('pengurus-kelas.kelas.pdf');
+    Route::prefix('class-officer')->middleware('role:class_officer')->group(function (): void {
+        Route::get('dashboard', [ClassOfficerController::class, 'index'])->name('class-officer.dashboard');
+        Route::get('profile/{id}', [ClassOfficerController::class, 'showProfile'])->name('class-officer.profile.show');
+        Route::get('history', [ClassOfficerController::class, 'showHistory'])->name('class-officer.history.index');
+        Route::get('attendance', [ClassOfficerController::class, 'openCamera'])->name('class-officer.attendance.create');
+        Route::post('attendance', [ClassOfficerController::class, 'store'])->name('class-officer.attendance.store');
+        Route::post('attendance/check', [ClassOfficerController::class, 'checkCapture'])->name('class-officer.attendance.check');
+        Route::get('events', [ClassOfficerController::class, 'showClassroom'])->name('class-officer.events.index');
+        Route::post('events/suggestions', [ClassOfficerController::class, 'suggestAttendanceEvent'])->name('class-officer.events.suggest');
+        Route::get('attendance/pdf', [ClassOfficerController::class, 'exportAttendance'])->name('class-officer.attendance.pdf');
+        Route::get('events/pdf', [ClassOfficerController::class, 'exportClassroom'])->name('class-officer.events.pdf');
     });
 
-    // WALI KELAS
-    Route::prefix('wali-kelas')->middleware('akses:2')->group(function () {
-        // DASHBOARD
-        Route::get('dashboard', [WaliKelasController::class, 'index'])->name('wali-kelas.dashboard');
-        Route::get('detail-profil/{id}', [WaliKelasController::class, 'detailProfil'])->name('wali-kelas.profil.detail');
-        // AKUN SISWA
-        Route::get('akun-siswa', [WaliKelasController::class, 'showSiswa'])->name('wali-kelas.siswa.index');
-        Route::get('detail-siswa/{id}', [WaliKelasController::class, 'detailSiswa'])->name('wali-kelas.siswa.detail');
-        Route::get('edit-siswa/{id}', [WaliKelasController::class, 'editSiswa'])->name('wali-kelas.siswa.edit');
-        Route::post('edit-siswa/simpan', [WaliKelasController::class, 'updateSiswa'])->name('wali-kelas.siswa.update');
-
-        // PENGURUS KELAS
-        Route::get('akun-pengurus-kelas', [WaliKelasController::class, 'showPengurus'])->name('wali-kelas.pengurus-kelas.index');
-        Route::get('tambah-pengurus-kelas', [WaliKelasController::class, 'createPengurus'])->name('wali-kelas.pengurus-kelas.create');
-        Route::post('simpan-pengurus-kelas', [WaliKelasController::class, 'storePengurus'])->name('wali-kelas.pengurus-kelas.store');
-        Route::get('detail-kelas/{id}', [WaliKelasController::class, 'detailKelasPengurus'])->name('wali-kelas.pengurus-kelas.detail-kelas');
-        Route::get('detail-siswa-pengurus/{id}', [WaliKelasController::class, 'detailSiswa'])->name('wali-kelas.pengurus-kelas.detail-siswa');
-        Route::get('edit-pengurus-kelas/{id}', [WaliKelasController::class, 'editPengurus'])->name('wali-kelas.pengurus-kelas.edit');
-        Route::post('edit-pengurus-kelas/update', [WaliKelasController::class, 'updatePengurus'])->name('wali-kelas.pengurus-kelas.update');
-        Route::delete('hapus-pengurus-kelas', [WaliKelasController::class, 'destroyPengurus'])->name('wali-kelas.pengurus-kelas.destroy');
-
-        // PRESENSI SISWA
-        Route::get('presensi-siswa', [WaliKelasController::class, 'showPresensi'])->name('wali-kelas.presensi-siswa.index');
-        Route::get('edit-presensi-siswa/{id}', [WaliKelasController::class, 'editPresensi'])->name('wali-kelas.presensi-siswa.edit');
-        Route::post('edit-presensi-siswa/update', [WaliKelasController::class, 'updatePresensi'])->name('wali-kelas.presensi-siswa.update');
-        Route::get('presensi-pdf', [WaliKelasController::class, 'exportPresensi'])->name('wali-kelas.presensi-siswa.pdf');
-
-        // LOGS
-        Route::get('logs', [WaliKelasController::class, 'logs'])->name('wali-kelas.logs.index');
+    Route::prefix('homeroom')->middleware('role:homeroom_teacher')->group(function (): void {
+        Route::get('dashboard', [HomeroomController::class, 'index'])->name('homeroom.dashboard');
+        Route::get('profile/{id}', [HomeroomController::class, 'showProfile'])->name('homeroom.profile.show');
+        Route::get('students', [HomeroomController::class, 'showStudent'])->name('homeroom.students.index');
+        Route::get('students/{id}', [HomeroomController::class, 'detailStudent'])->name('homeroom.students.show');
+        Route::get('students/{id}/edit', [HomeroomController::class, 'editStudent'])->name('homeroom.students.edit');
+        Route::put('students/{id}', [HomeroomController::class, 'updateStudent'])->name('homeroom.students.update');
+        Route::get('class-officers', [HomeroomController::class, 'showClassOfficers'])->name('homeroom.class-officers.index');
+        Route::get('class-officers/create', [HomeroomController::class, 'createClassOfficer'])->name('homeroom.class-officers.create');
+        Route::post('class-officers', [HomeroomController::class, 'storeClassOfficer'])->name('homeroom.class-officers.store');
+        Route::get('class-officers/{id}', [HomeroomController::class, 'detailClassroomPengurus'])->name('homeroom.class-officers.show');
+        Route::get('class-officers/{id}/edit', [HomeroomController::class, 'editClassOfficer'])->name('homeroom.class-officers.edit');
+        Route::put('class-officers/{id}', [HomeroomController::class, 'updateClassOfficer'])->name('homeroom.class-officers.update');
+        Route::delete('class-officers', [HomeroomController::class, 'destroyClassOfficer'])->name('homeroom.class-officers.destroy');
+        Route::get('attendance', [HomeroomController::class, 'showAttendance'])->name('homeroom.attendance.index');
+        Route::get('attendance/{id}/edit', [HomeroomController::class, 'editAttendance'])->name('homeroom.attendance.edit');
+        Route::put('attendance/{id}', [HomeroomController::class, 'updateAttendance'])->name('homeroom.attendance.update');
+        Route::get('attendance/pdf', [HomeroomController::class, 'exportAttendance'])->name('homeroom.attendance.pdf');
+        Route::get('audits', [HomeroomController::class, 'showAuditLog'])->name('homeroom.audits.index');
     });
 
-    // SISWA
-    Route::prefix('siswa')->middleware('akses:1')->group(function () {
-        Route::get('dashboard', [SiswaController::class, 'index'])->name('siswa.dashboard');
-        Route::get('detail-profil/{id}', [SiswaController::class, 'detailProfil'])->name('siswa.profil.detail');
-        Route::get('histori', [SiswaController::class, 'showHistori'])->name('siswa.histori.index');
-
-        // PRESENSI
-        Route::get('/presensi', [SiswaController::class, 'openCam'])->name('siswa.presensi.index');
-        Route::post('webcam', [SiswaController::class, 'store'])->name('siswa.webcam.capture');
-        Route::post('/webcam/check_snapshot', [SiswaController::class, 'checkSnapshot'])->name('siswa.webcam.check_snapshot');
-        Route::get('presensi-pdf', [SiswaController::class, 'exportPresensi'])->name('siswa.presensi.pdf');
-
+    Route::prefix('student')->middleware('role:student')->group(function (): void {
+        Route::get('dashboard', [StudentController::class, 'index'])->name('student.dashboard');
+        Route::get('profile/{id}', [StudentController::class, 'showProfile'])->name('student.profile.show');
+        Route::get('history', [StudentController::class, 'showHistory'])->name('student.history.index');
+        Route::get('attendance', [StudentController::class, 'openCamera'])->name('student.attendance.create');
+        Route::post('attendance', [StudentController::class, 'store'])->name('student.attendance.store');
+        Route::post('attendance/check', [StudentController::class, 'checkCapture'])->name('student.attendance.check');
+        Route::get('attendance/pdf', [StudentController::class, 'exportAttendance'])->name('student.attendance.pdf');
     });
 });

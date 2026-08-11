@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Ruang kerja presensi dan administrasi sekolah SmartPresensi.">
+    <meta name="description" content="{{ __('common.app_description') }}">
     <meta name="theme-color" content="#ffffff">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @notifyCss
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <title>@yield('judul', 'SmartPresensi') · SmartPresensi</title>
+    <title>@yield('title', 'SmartPresensi') · SmartPresensi</title>
 </head>
 
 <body class="app-body" data-route="{{ request()->route()?->getName() }}">
-    <a class="skip-link" href="#main-content">Lewati ke konten</a>
+    <a class="skip-link" href="#main-content">{{ __('common.skip_to_content') }}</a>
 
     <div class="notify-stack" aria-live="polite">
         @include('notify::components.notify')
@@ -28,8 +28,8 @@
                 @if (! request()->routeIs('*.dashboard'))
                     <header class="page-heading" aria-labelledby="page-title">
                         <div>
-                            <p class="page-heading-kicker">Ruang kerja</p>
-                            <h2 id="page-title">@yield('judul')</h2>
+                            <p class="page-heading-kicker">{{ __('common.workspace') }}</p>
+                            <h2 id="page-title">@yield('title')</h2>
                             @hasSection('page-description')
                                 <p class="page-heading-description">@yield('page-description')</p>
                             @endif
@@ -38,7 +38,7 @@
                     </header>
                 @endif
 
-                @yield('isi')
+                @yield('content')
             </div>
         </main>
     </div>

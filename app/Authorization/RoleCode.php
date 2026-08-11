@@ -2,26 +2,22 @@
 
 namespace App\Authorization;
 
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\Role;
-use Illuminate\Support\Str;
 
 enum RoleCode: string
 {
-    case STUDENT = 'siswa';
-    case HOMEROOM_TEACHER = 'wali-kelas';
-    case CLASS_OFFICER = 'pengurus-kelas';
-    case DUTY_TEACHER = 'guru-piket';
-    case COUNSELING_TEACHER = 'guru-bk';
-    case ADMINISTRATION = 'tata-usaha';
+    case STUDENT = 'student';
+    case HOMEROOM_TEACHER = 'homeroom_teacher';
+    case CLASS_OFFICER = 'class_officer';
+    case DUTY_TEACHER = 'duty_teacher';
+    case COUNSELING_TEACHER = 'counseling_teacher';
+    case ADMINISTRATION = 'administrator';
 
-    public static function forAccount(Akun $account): ?self
+    public static function forAccount(Account $account): ?self
     {
-        $role = $account->role;
-        if (! $role instanceof Role) {
-            return null;
-        }
+        $role = $account->relationLoaded('role') ? $account->role : $account->role()->first();
 
-        return self::tryFrom(Str::slug($role->nama_role));
+        return $role instanceof Role ? self::tryFrom((string) $role->code) : null;
     }
 }

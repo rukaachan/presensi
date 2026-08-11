@@ -2,21 +2,21 @@
 
 namespace App\Authorization;
 
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceRecord;
-use App\Models\Guru;
-use App\Models\Kelas;
-use App\Models\Siswa;
+use App\Models\Classroom;
+use App\Models\Student;
+use App\Models\Teacher;
 
 class AttendanceScope
 {
-    public function canViewStudent(Akun $account, Siswa $student): bool
+    public function canViewStudent(Account $account, Student $student): bool
     {
         $role = RoleCode::forAccount($account);
 
         if ($role === RoleCode::STUDENT) {
-            return (int) $student->id_akun === (int) $account->getKey();
+            return (int) $student->account_id === (int) $account->getKey();
         }
 
         if (in_array($role, [
@@ -32,27 +32,23 @@ class AttendanceScope
         }
 
         if ($role === RoleCode::HOMEROOM_TEACHER) {
-            $student->loadMissing('kelas.waliKelas');
-            $class = $student->getRelation('kelas');
-            if (! $class instanceof Kelas) {
-                return false;
-            }
+            $student->loadMissing('classroom.homeroomTeacher');
+            $classroom = $student->classroom;
+            $teacher = $classroom instanceof Classroom ? $classroom->homeroomTeacher : null;
 
-            $homeroomTeacher = $class->getRelation('waliKelas');
-
-            return $homeroomTeacher instanceof Guru
-                && (int) $homeroomTeacher->id_akun === (int) $account->getKey();
+            return $teacher instanceof Teacher
+                && (int) $teacher->account_id === (int) $account->getKey();
         }
 
         return false;
     }
 
-    public function canSubmitFor(Akun $account, Siswa $student): bool
+    public function canSubmitFor(Account $account, Student $student): bool
     {
         $role = RoleCode::forAccount($account);
 
         if ($role === RoleCode::STUDENT) {
-            return (int) $student->id_akun === (int) $account->getKey();
+            return (int) $student->account_id === (int) $account->getKey();
         }
 
         return in_array($role, [
@@ -62,56 +58,45 @@ class AttendanceScope
         ], true) && $this->canViewStudent($account, $student);
     }
 
-    public function canReview(Akun $account, AttendanceRecord $record): bool
+    public function canReview(Account $account, AttendanceRecord $record): bool
     {
-        $student = $record->relationLoaded('student')
-            ? $record->student
-            : $record->student()->first();
-
-        if (! $student instanceof Siswa) {
+        $student = $record->relationLoaded('student') ? $record->student : $record->student()->first();
+        if (! $student instanceof Student) {
             return false;
         }
 
+        return in_array(RoleCode::forAccount($account), [RoleCode::DUTY_TEACHER, RoleCode::ADMINISTRATION], true)
+            || (RoleCode::forAccount($account) === RoleCode::HOMEROOM_TEACHER
+                && $this->canViewStudent($account, $student));
+    }
+
+    public function canReviewEvent(Account $account, AttendanceEvent $event): bool
+    {
+        $student = $event->relationLoaded('student') ? $event->student : $event->student()->first();
+
+        return $student instanceof Student
+            && in_array(RoleCode::forAccount($account), [RoleCode::DUTY_TEACHER, RoleCode::ADMINISTRATION], true)
+            && $this->canViewStudent($account, $student);
+    }
+
+    public function canObserve(Account $account, Student $student): bool
+    {
         $role = RoleCode::forAccount($account);
 
         if (in_array($role, [RoleCode::DUTY_TEACHER, RoleCode::ADMINISTRATION], true)) {
             return true;
         }
 
-        return $role === RoleCode::HOMEROOM_TEACHER
-            && $this->canViewStudent($account, $student);
+        return $role === RoleCode::CLASS_OFFICER && $this->sameClassAsOwnStudent($account, $student);
     }
 
-    public function canReviewEvent(Akun $account, AttendanceEvent $event): bool
+    private function sameClassAsOwnStudent(Account $account, Student $student): bool
     {
-        $student = $event->relationLoaded('student')
-            ? $event->student
-            : $event->student()->first();
+        $ownStudent = Student::query()
+            ->where('account_id', $account->getKey())
+            ->first(['classroom_id']);
 
-        return $student instanceof Siswa
-            && in_array(RoleCode::forAccount($account), [RoleCode::DUTY_TEACHER, RoleCode::ADMINISTRATION], true)
-            && $this->canViewStudent($account, $student);
-    }
-
-    public function canObserve(Akun $account, Siswa $student): bool
-    {
-        $role = RoleCode::forAccount($account);
-
-        if ($role === RoleCode::DUTY_TEACHER || $role === RoleCode::ADMINISTRATION) {
-            return true;
-        }
-
-        return $role === RoleCode::CLASS_OFFICER
-            && $this->sameClassAsOwnStudent($account, $student);
-    }
-
-    private function sameClassAsOwnStudent(Akun $account, Siswa $student): bool
-    {
-        $ownStudent = Siswa::query()
-            ->where('id_akun', $account->getKey())
-            ->first(['id_kelas']);
-
-        return $ownStudent instanceof Siswa
-            && (int) $ownStudent->id_kelas === (int) $student->id_kelas;
+        return $ownStudent instanceof Student
+            && (int) $ownStudent->classroom_id === (int) $student->classroom_id;
     }
 }

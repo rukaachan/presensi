@@ -1,0 +1,3 @@
+<?php
+
+return ['meta_description' => 'Sign in to SmartPresensi', 'home' => 'SmartPresensi home', 'story_eyebrow' => 'School attendance workspace', 'story_title' => 'School days run better when attendance is clear.', 'story_description' => 'Attendance, class review, and school administration in one workspace.', 'story_footer' => 'Built for focused school operations', 'welcome' => 'Welcome back', 'login_title' => 'Sign in to your workspace', 'login_description' => 'Use your school account to continue.', 'username' => 'Username', 'password' => 'Password', 'submit' => 'Open dashboard', 'note' => 'Access is available only to registered school accounts.', 'visual_label' => 'Attendance workspace summary', 'visual_caption' => 'Start with a trusted record'];

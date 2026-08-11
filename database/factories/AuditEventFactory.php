@@ -17,7 +17,7 @@ class AuditEventFactory extends Factory
         return [
             'actor_id' => null,
             'actor_type' => null,
-            'legacy_actor' => null,
+            'source_actor' => null,
             'action' => fake()->randomElement(['created', 'updated', 'reviewed']),
             'subject_type' => null,
             'subject_id' => null,
@@ -25,7 +25,7 @@ class AuditEventFactory extends Factory
             'after' => null,
             'metadata' => [],
             'occurred_at' => now(),
-            'legacy_log_id' => null,
+            'source_log_id' => null,
         ];
     }
 }

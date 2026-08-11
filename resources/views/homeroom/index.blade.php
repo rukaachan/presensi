@@ -1,0 +1,8 @@
+@extends('layout.layout')
+@section('title', __('pages.homeroom_dashboard'))
+@section('content')
+<section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="eyebrow">{{ __('pages.class_summary') }}</p><h2 id="dashboard-title">{{ __('pages.homeroom_headline') }}</h2><p>{{ __('pages.homeroom_description') }}</p></div><a class="quick-action rounded-md bg-accent text-accent-foreground ring-1 ring-accent" href="{{ route('homeroom.attendance.index') }}"><span>{{ __('nav.review_attendance') }}</span><i class="ph-bold ph-arrow-right" aria-hidden="true"></i></a></section>
+@php $metrics=[['label'=>__('nav.students'),'value'=>$totalStudent,'meta'=>__('pages.students_in_scope'),'tone'=>'metric-card--dark'],['label'=>__('attendance.confirmed'),'value'=>$totalPresent,'meta'=>__('attendance.recorded_count'),'tone'=>'metric-card--green'],['label'=>__('attendance.excused'),'value'=>$totalExcused,'meta'=>__('attendance.approved_absence'),'tone'=>''],['label'=>__('attendance.absent'),'value'=>$totalAbsent,'meta'=>__('attendance.needs_attention'),'tone'=>'']]; @endphp
+<div class="metric-grid">@foreach($metrics as $metric)<article class="metric-card rounded-lg bg-card text-card-foreground ring-1 ring-border {{ $metric['tone'] }}"><span class="metric-label">{{ $metric['label'] }}</span><strong class="metric-value">{{ $metric['value'] }}</strong><p class="metric-meta">{{ $metric['meta'] }}</p></article>@endforeach</div>
+@include('layout.partials.metric-bars',['metrics'=>$metrics,'visualTitle'=>__('pages.class_balance'),'visualDescription'=>__('pages.class_balance_description')])
+@endsection

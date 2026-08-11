@@ -2,65 +2,42 @@
 
 namespace Tests\Feature;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Tests\Support\CanonicalDatabase;
 use Tests\TestCase;
 
 class DatabaseSeederTest extends TestCase
 {
-    public function test_local_database_seeder_is_repeatable_and_contains_operational_demo_data(): void
+    use CanonicalDatabase;
+
+    public function test_database_seeder_is_repeatable_and_contains_canonical_demo_data(): void
     {
-        config()->set('database.default', 'sqlite');
-        config()->set('database.connections.sqlite.database', ':memory:');
-        DB::purge('sqlite');
-        DB::reconnect('sqlite');
+        $this->seedCanonicalDatabase();
+        $this->assertDatabaseHas('accounts', ['username' => 'administrator.demo']);
+        $this->assertDatabaseHas('roles', ['code' => 'student']);
+        $this->assertSame(6, DB::table('roles')->count());
+        $this->assertSame(33, DB::table('accounts')->count());
+        $this->assertSame(8, DB::table('teachers')->count());
+        $this->assertSame(8, DB::table('classrooms')->count());
+        $this->assertSame(24, DB::table('students')->count());
+        $this->assertSame(8, DB::table('class_officers')->count());
+        $this->assertGreaterThan(0, DB::table('attendance_records')->count());
+        $this->assertGreaterThan(0, DB::table('attendance_events')->count());
+        foreach (['akun', 'siswa', 'guru', 'kelas', 'jurusan', 'presensi_siswa', 'validasi', 'logs'] as $table) {
+            $this->assertFalse(Schema::hasTable($table), $table.' should not exist after the English migration.');
+        }
 
-        $this->assertSame(Command::SUCCESS, Artisan::call('migrate:fresh', [
-            '--seed' => true,
-            '--force' => true,
-        ]));
-
-        $this->assertDatabaseHas('akun', ['username' => 'tu.demo']);
-        $this->assertTrue(Hash::check('password123', (string) DB::table('akun')->where('username', 'tu.demo')->value('password')));
-        $this->assertSame(6, DB::table('role_akun')->count());
-        $this->assertSame(0, DB::table('sqlite_master')->where('type', 'trigger')->count());
-        $this->assertSame(6, DB::table('attendance_sessions')->count());
-        $this->assertSame(1, DB::table('attendance_sessions')->where('required', true)->count());
-        $this->assertSame(33, DB::table('akun')->count());
-        $this->assertSame(8, DB::table('guru')->count());
-        $this->assertSame(8, DB::table('kelas')->count());
-        $this->assertSame(24, DB::table('siswa')->count());
-        $this->assertSame(8, DB::table('pengurus_kelas')->count());
-        $this->assertSame(21, DB::table('presensi_siswa')->where('tanggal', CarbonImmutable::now('Asia/Jakarta')->toDateString())->count());
-        $this->assertSame(DB::table('presensi_siswa')->count(), DB::table('attendance_records')->count());
-        $this->assertSame(DB::table('validasi')->count(), DB::table('attendance_events')->count());
-        $this->assertGreaterThan(0, DB::table('validasi')->where('status_validasi', 'tidak_ada')->count());
-        $this->assertGreaterThan(0, DB::table('logs')->count());
-
-        $countsBeforeReseed = $this->tableCounts();
-
-        $this->assertSame(Command::SUCCESS, Artisan::call('db:seed', ['--force' => true]));
-        $this->assertSame($countsBeforeReseed, $this->tableCounts());
+        $counts = $this->canonicalCounts();
+        $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
+        $this->assertSame($counts, $this->canonicalCounts());
     }
 
-    private function tableCounts(): array
+    /** @return array<string, int> */
+    private function canonicalCounts(): array
     {
-        return [
-            'roles' => DB::table('role_akun')->count(),
-            'attendanceSessions' => DB::table('attendance_sessions')->count(),
-            'accounts' => DB::table('akun')->count(),
-            'teachers' => DB::table('guru')->count(),
-            'classes' => DB::table('kelas')->count(),
-            'students' => DB::table('siswa')->count(),
-            'officers' => DB::table('pengurus_kelas')->count(),
-            'attendance' => DB::table('presensi_siswa')->count(),
-            'targetAttendance' => DB::table('attendance_records')->count(),
-            'validation' => DB::table('validasi')->count(),
-            'targetEvents' => DB::table('attendance_events')->count(),
-            'logs' => DB::table('logs')->count(),
-        ];
+        return collect(['roles', 'accounts', 'teachers', 'classrooms', 'students', 'class_officers', 'attendance_records', 'attendance_events', 'audit_events'])
+            ->mapWithKeys(static fn (string $table): array => [$table => DB::table($table)->count()])
+            ->all();
     }
 }

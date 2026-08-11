@@ -1,0 +1,3 @@
+@extends('layout.layout')
+@section('title', __('pages.teacher_detail'))
+@section('content')<section class="workspace-page"><div class="card p-4"><h3>{{ $teacher->name }}</h3><dl><dt>{{ __('labels.username') }}</dt><dd>{{ $teacher->account?->username }}</dd><dt>{{ __('labels.role') }}</dt><dd>{{ $teacher->account?->role?->name }}</dd><dt>{{ __('labels.homeroom_classrooms') }}</dt><dd>@forelse($teacher->homeroomClassrooms as $classroom){{ $classroom->grade_level }} {{ $classroom->name }}@if(!$loop->last), @endif @empty—@endforelse</dd></dl><a href="{{ route('administration.teachers.index') }}" class="btn btn-secondary">{{ __('actions.back') }}</a></div></section>@endsection

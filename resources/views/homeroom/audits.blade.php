@@ -1,0 +1,4 @@
+@extends('layout.layout')
+@section('title', __('pages.audits'))
+@section('page-description', __('pages.audits_description'))
+@section('content')<section class="workspace-page"><div class="table-scroll" tabindex="0"><table class="table table-bordered"><thead><tr><th>{{ __('labels.number') }}</th><th>{{ __('labels.action') }}</th><th>{{ __('labels.actor') }}</th><th>{{ __('labels.subject') }}</th><th>{{ __('labels.date') }}</th></tr></thead><tbody>@forelse($audits as $audit)<tr><td>{{ $loop->iteration }}</td><td>{{ __('audit.actions.'.$audit->action) }}</td><td>{{ $audit->actor_type ? __('audit.actors.'.$audit->actor_type) : __('labels.system') }}</td><td>{{ __('audit.subjects.'.($audit->subject_type ?: 'system_event')) }} {{ $audit->subject_id }}</td><td>{{ $audit->occurred_at }}</td></tr>@empty<tr><td colspan="5">{{ __('pages.no_audits') }}</td></tr>@endforelse</tbody></table></div>{{ $audits->links() }}</section>@endsection

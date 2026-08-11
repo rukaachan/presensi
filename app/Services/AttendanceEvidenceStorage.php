@@ -18,12 +18,12 @@ class AttendanceEvidenceStorage
     public function storeDataUri(string $dataUri, string $directory = 'attendance/evidence'): array
     {
         if (! preg_match('/^data:(image\/(?:png|jpeg|jpg));base64,(.+)$/s', $dataUri, $matches)) {
-            throw new InvalidArgumentException('Evidence must be a base64 PNG or JPEG data URI.');
+            throw new InvalidArgumentException(__('attendance.errors.evidence_data_uri_invalid'));
         }
 
         $bytes = base64_decode($matches[2], true);
         if ($bytes === false) {
-            throw new InvalidArgumentException('Evidence contains invalid base64 data.');
+            throw new InvalidArgumentException(__('attendance.errors.evidence_base64_invalid'));
         }
 
         return $this->storeBytes($bytes, $matches[1], $directory);
@@ -37,17 +37,17 @@ class AttendanceEvidenceStorage
     public function storeUploadedFile(UploadedFile $file, string $directory = 'attendance/evidence'): array
     {
         if (! $file->isValid()) {
-            throw new InvalidArgumentException('Evidence upload is invalid.');
+            throw new InvalidArgumentException(__('attendance.errors.evidence_upload_invalid'));
         }
 
         $realPath = $file->getRealPath();
         if ($realPath === false) {
-            throw new RuntimeException('Evidence upload could not be located.');
+            throw new RuntimeException(__('attendance.errors.evidence_upload_missing'));
         }
 
         $bytes = file_get_contents($realPath);
         if ($bytes === false) {
-            throw new RuntimeException('Evidence upload could not be read.');
+            throw new RuntimeException(__('attendance.errors.evidence_upload_unreadable'));
         }
 
         $mime = (string) $file->getMimeType();
@@ -72,20 +72,20 @@ class AttendanceEvidenceStorage
         $maxBytes = max(1, (int) config('attendance.max_evidence_bytes', 2097152));
         $size = strlen($bytes);
         if ($size === 0 || $size > $maxBytes) {
-            throw new InvalidArgumentException('Evidence exceeds the configured size limit.');
+            throw new InvalidArgumentException(__('attendance.errors.evidence_size_limit'));
         }
 
         $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
         $extension = match ($detectedMime) {
             'image/png' => 'png',
             'image/jpeg' => 'jpg',
-            default => throw new InvalidArgumentException('Evidence must be a valid PNG or JPEG image.'),
+            default => throw new InvalidArgumentException(__('attendance.errors.evidence_image_invalid')),
         };
 
         $disk = $this->disk();
         $path = trim($directory, '/').'/'.Str::uuid().'.'.$extension;
         if (! Storage::disk($disk)->put($path, $bytes)) {
-            throw new RuntimeException('Evidence could not be stored.');
+            throw new RuntimeException(__('attendance.errors.evidence_store_failed'));
         }
 
         return [

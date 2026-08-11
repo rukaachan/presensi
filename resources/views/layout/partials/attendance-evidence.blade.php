@@ -1,14 +1,10 @@
 @php
-    $targetPath = data_get($record ?? null, 'evidence_path');
-    $targetId = data_get($record ?? null, 'attendance_record_id');
-    $legacyFilename = data_get($record ?? null, 'foto_bukti');
-    $legacyPath = $legacyFilename ? public_path('presensi_bukti/'.$legacyFilename) : null;
+    $attendanceRecord = $record ?? null;
+    $recordId = data_get($attendanceRecord, 'id');
+    $evidencePath = data_get($attendanceRecord, 'evidence_path');
 @endphp
-
-@if ($targetPath && $targetId)
-    <img src="{{ route('attendance.evidence', $targetId) }}" class="evidence-preview" alt="{{ $alt ?? 'Bukti kehadiran' }}">
-@elseif ($legacyFilename && $legacyPath && file_exists($legacyPath))
-    <img src="{{ asset('presensi_bukti/'.$legacyFilename) }}" class="evidence-preview" alt="{{ $alt ?? 'Bukti kehadiran' }}">
+@if ($recordId && $evidencePath)
+    <a href="{{ route('attendance.evidence', ['attendanceRecord' => $recordId]) }}" target="_blank" rel="noopener" class="evidence-link"><img src="{{ route('attendance.evidence', ['attendanceRecord' => $recordId]) }}" class="evidence-preview" alt="{{ $alt ?? __('accessibility.attendance_evidence') }}"></a>
 @else
-    <span class="evidence-placeholder"><i class="ph-bold ph-image-square" aria-hidden="true"></i> Bukti tidak tersedia</span>
+    <span class="text-muted">{{ __('attendance.no_evidence') }}</span>
 @endif

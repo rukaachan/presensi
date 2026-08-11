@@ -5,9 +5,7 @@ namespace Database\Factories;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Role>
- */
+/** @extends Factory<Role> */
 class RoleFactory extends Factory
 {
     protected $model = Role::class;
@@ -15,7 +13,8 @@ class RoleFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_role' => fake()->unique()->words(2, true),
+            'code' => fake()->unique()->lexify('role_????'),
+            'name' => fake()->unique()->jobTitle(),
         ];
     }
 }

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AttendanceSession;
-use App\Models\Jurusan;
+use App\Models\Department;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -14,17 +14,14 @@ class ReferenceSeeder extends Seeder
     {
         DB::transaction(function (): void {
             foreach ([
-                'Siswa',
-                'Wali Kelas',
-                'Pengurus Kelas',
-                'Guru Piket',
-                'Guru BK',
-                'Tata Usaha',
-            ] as $roleName) {
-                Role::query()->updateOrCreate(
-                    ['nama_role' => $roleName],
-                    [],
-                );
+                ['student', 'Siswa'],
+                ['homeroom_teacher', 'Wali kelas'],
+                ['class_officer', 'Pengurus kelas'],
+                ['duty_teacher', 'Guru piket'],
+                ['counseling_teacher', 'Guru BK'],
+                ['administrator', 'Tata usaha'],
+            ] as [$code, $name]) {
+                Role::query()->updateOrCreate(['code' => $code], ['name' => $name]);
             }
 
             foreach (config('attendance.sessions', []) as $session) {
@@ -33,7 +30,6 @@ class ReferenceSeeder extends Seeder
                     [
                         'label' => $session['label'],
                         'kind' => $session['kind'],
-                        'legacy_code' => $session['legacy_code'],
                         'required' => $session['required'],
                         'active' => $session['active'],
                         'window_start' => $session['window_start'],
@@ -54,9 +50,9 @@ class ReferenceSeeder extends Seeder
                 'Akuntansi',
                 'Tata Busana',
             ] as $departmentName) {
-                Jurusan::query()->updateOrCreate(
-                    ['nama_jurusan' => $departmentName],
-                    ['pembuat' => 'Reference seed'],
+                Department::query()->updateOrCreate(
+                    ['name' => $departmentName],
+                    ['created_by_label' => 'Reference seed'],
                 );
             }
         });

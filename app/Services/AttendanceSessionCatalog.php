@@ -41,30 +41,21 @@ class AttendanceSessionCatalog
     }
 
     /**
-     * Sessions that can be used by the existing validation route.
-     *
-     * Legacy validation rows use `legacy_code`; new session kinds without a
-     * legacy code remain available to the future event workflow.
+     * Optional sessions that support event observations.
      *
      * @return Collection<int, AttendanceSession>
      */
     public function validationSessions(): Collection
     {
         return $this->active()
-            ->filter(static fn (AttendanceSession $session): bool => $session->legacy_code !== null
+            ->filter(static fn (AttendanceSession $session): bool => ! $session->required
                 && in_array($session->kind, ['break', 'check_out', 'special'], true))
             ->values();
     }
 
-    /**
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function validationCodes(): array
     {
-        return $this->validationSessions()
-            ->pluck('legacy_code')
-            ->filter(static fn (mixed $code): bool => is_string($code) && $code !== '')
-            ->values()
-            ->all();
+        return $this->validationSessions()->pluck('code')->values()->all();
     }
 }

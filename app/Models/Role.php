@@ -6,20 +6,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ */
 class Role extends Model
 {
     use HasFactory;
 
-    protected $table = 'role_akun';
+    protected $table = 'roles';
 
-    protected $fillable = ['nama_role'];
-
-    protected $primaryKey = 'id_role';
+    protected $fillable = ['code', 'name'];
 
     public $timestamps = false;
 
-    public function akuns(): HasMany
+    public function accounts(): HasMany
     {
-        return $this->hasMany(Akun::class, 'id_role', 'id_role');
+        return $this->hasMany(Account::class, 'role_id');
     }
 }

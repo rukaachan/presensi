@@ -7,51 +7,45 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        // Application bindings are resolved through Laravel's container.
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        Builder::macro('joinKelas', function (): Builder {
+        Builder::macro('joinClassroom', function (): Builder {
             /** @var Builder $this */
-            return $this->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas');
+            return $this->join('classrooms', 'students.classroom_id', '=', 'classrooms.id');
         });
 
-        Builder::macro('joinKelasGuruWali', function (): Builder {
+        Builder::macro('joinClassroomTeacher', function (): Builder {
             /** @var Builder $this */
-            return $this->joinKelas()
-                ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas');
+            return $this->joinClassroom()
+                ->join('teachers', 'teachers.id', '=', 'classrooms.homeroom_teacher_id');
         });
 
-        Builder::macro('joinSiswa', function (): Builder {
+        Builder::macro('joinStudent', function (): Builder {
             /** @var Builder $this */
-            return $this->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa');
+            return $this->join('students', 'attendance_records.student_id', '=', 'students.id');
         });
 
-        Builder::macro('joinSiswaKelas', function (): Builder {
+        Builder::macro('joinStudentClassroom', function (): Builder {
             /** @var Builder $this */
-            return $this->joinSiswa()
-                ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas');
+            return $this->joinStudent()
+                ->join('classrooms', 'students.classroom_id', '=', 'classrooms.id');
         });
 
-        Builder::macro('joinSiswaKelasGuruWali', function (): Builder {
+        Builder::macro('joinStudentClassroomTeacher', function (): Builder {
             /** @var Builder $this */
-            return $this->joinSiswaKelas()
-                ->join('guru', 'guru.id_guru', '=', 'kelas.id_wali_kelas');
+            return $this->joinStudentClassroom()
+                ->join('teachers', 'teachers.id', '=', 'classrooms.homeroom_teacher_id');
         });
 
-        Builder::macro('joinSiswaKelasGuruWaliJurusan', function (): Builder {
+        Builder::macro('joinStudentClassroomDepartment', function (): Builder {
             /** @var Builder $this */
-            return $this->joinSiswaKelasGuruWali()
-                ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan');
+            return $this->joinStudentClassroom()
+                ->join('departments', 'classrooms.department_id', '=', 'departments.id');
         });
     }
 }

@@ -16,7 +16,7 @@ class AuditEvent extends Model
     protected $fillable = [
         'actor_id',
         'actor_type',
-        'legacy_actor',
+        'source_actor',
         'action',
         'subject_type',
         'subject_id',
@@ -24,7 +24,7 @@ class AuditEvent extends Model
         'after',
         'metadata',
         'occurred_at',
-        'legacy_log_id',
+        'source_log_id',
     ];
 
     protected static function booted(): void
@@ -49,6 +49,6 @@ class AuditEvent extends Model
 
     public function actor(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'actor_id', 'id_akun');
+        return $this->belongsTo(Account::class, 'actor_id');
     }
 }

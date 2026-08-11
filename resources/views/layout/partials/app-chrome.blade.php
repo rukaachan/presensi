@@ -1,83 +1,73 @@
 @php
     $account = Auth::user();
-    $role = (int) $account->id_role;
-
-    $roleName = match ($role) {
-        1 => 'Siswa',
-        2 => 'Wali kelas',
-        3 => 'Pengurus kelas',
-        4 => 'Guru piket',
-        5 => 'Guru BK',
-        6 => 'Tata usaha',
-        default => 'Akun',
+    $roleCode = \App\Authorization\RoleCode::forAccount($account)?->value;
+    $roleName = $account->role?->name ?? __('labels.account');
+    $profileModel = match ($roleCode) {
+        'student', 'class_officer' => $account->student,
+        'homeroom_teacher', 'duty_teacher', 'counseling_teacher' => $account->teacher,
+        default => null,
     };
-
-    // Keep the shell query-free; profile details load only on the profile screen.
-    $profileName = $account->username;
-    $profilePhoto = null;
-    $profileDirectory = null;
-
-    $profileUrl = match ($role) {
-        1 => route('siswa.profil.detail', ['id' => $account->id_akun]),
-        2 => route('wali-kelas.profil.detail', ['id' => $account->id_akun]),
-        3 => route('pengurus-kelas.profil.detail', ['id' => $account->id_akun]),
-        4 => route('guru-piket.profil.detail', ['id' => $account->id_akun]),
-        5 => route('guru-bk.profil.detail', ['id' => $account->id_akun]),
-        default => route('tata-usaha.dashboard'),
+    $profileRoute = match ($roleCode) {
+        'student' => 'student.profile.show',
+        'class_officer' => 'class-officer.profile.show',
+        'homeroom_teacher' => 'homeroom.profile.show',
+        'duty_teacher' => 'duty-teacher.profile.show',
+        'counseling_teacher' => 'counseling.profile.show',
+        default => 'administration.dashboard',
     };
-
-    $dashboardRoute = match ($role) {
-        1 => 'siswa.dashboard',
-        2 => 'wali-kelas.dashboard',
-        3 => 'pengurus-kelas.dashboard',
-        4 => 'guru-piket.dashboard',
-        5 => 'guru-bk.dashboard',
-        6 => 'tata-usaha.dashboard',
+    $profileUrl = $profileModel
+        ? route($profileRoute, ['id' => $profileModel->getKey()])
+        : route('administration.dashboard');
+    $dashboardRoute = match ($roleCode) {
+        'student' => 'student.dashboard',
+        'class_officer' => 'class-officer.dashboard',
+        'homeroom_teacher' => 'homeroom.dashboard',
+        'duty_teacher' => 'duty-teacher.dashboard',
+        'counseling_teacher' => 'counseling.dashboard',
+        'administrator' => 'administration.dashboard',
         default => 'login',
     };
-
-    $navigation = match ($role) {
-        1 => [
-            ['label' => 'Dashboard', 'route' => 'siswa.dashboard', 'active' => 'siswa.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Presensi', 'route' => 'siswa.presensi.index', 'active' => 'siswa.presensi.*', 'icon' => 'ph-calendar-check'],
-            ['label' => 'Histori presensi', 'route' => 'siswa.histori.index', 'active' => 'siswa.histori.*', 'icon' => 'ph-notebook'],
+    $navigation = match ($roleCode) {
+        'student' => [
+            ['label' => __('nav.dashboard'), 'route' => 'student.dashboard', 'active' => 'student.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.attendance'), 'route' => 'student.attendance.create', 'active' => 'student.attendance.*', 'icon' => 'ph-calendar-check'],
+            ['label' => __('nav.history'), 'route' => 'student.history.index', 'active' => 'student.history.*', 'icon' => 'ph-notebook'],
         ],
-        2 => [
-            ['label' => 'Dashboard', 'route' => 'wali-kelas.dashboard', 'active' => 'wali-kelas.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Pengurus kelas', 'route' => 'wali-kelas.pengurus-kelas.index', 'active' => 'wali-kelas.pengurus-kelas.*', 'icon' => 'ph-users-three'],
-            ['label' => 'Siswa', 'route' => 'wali-kelas.siswa.index', 'active' => 'wali-kelas.siswa.*', 'icon' => 'ph-users-three'],
-            ['label' => 'Presensi', 'route' => 'wali-kelas.presensi-siswa.index', 'active' => 'wali-kelas.presensi-siswa.*', 'icon' => 'ph-calendar-check'],
-            ['label' => 'Logs', 'route' => 'wali-kelas.logs.index', 'active' => 'wali-kelas.logs.*', 'icon' => 'ph-notebook'],
+        'class_officer' => [
+            ['label' => __('nav.dashboard'), 'route' => 'class-officer.dashboard', 'active' => 'class-officer.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.attendance'), 'route' => 'class-officer.attendance.create', 'active' => 'class-officer.attendance.*', 'icon' => 'ph-calendar-check'],
+            ['label' => __('nav.events'), 'route' => 'class-officer.events.index', 'active' => 'class-officer.events.*', 'icon' => 'ph-chalkboard'],
+            ['label' => __('nav.history'), 'route' => 'class-officer.history.index', 'active' => 'class-officer.history.*', 'icon' => 'ph-notebook'],
         ],
-        3 => [
-            ['label' => 'Dashboard', 'route' => 'pengurus-kelas.dashboard', 'active' => 'pengurus-kelas.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Presensi', 'route' => 'pengurus-kelas.presensi.index', 'active' => 'pengurus-kelas.presensi.*', 'icon' => 'ph-calendar-check'],
-            ['label' => 'Validasi kelas', 'route' => 'pengurus-kelas.kelas.index', 'active' => 'pengurus-kelas.kelas.*', 'icon' => 'ph-chalkboard'],
-            ['label' => 'Histori presensi', 'route' => 'pengurus-kelas.histori.index', 'active' => 'pengurus-kelas.histori.*', 'icon' => 'ph-notebook'],
+        'homeroom_teacher' => [
+            ['label' => __('nav.dashboard'), 'route' => 'homeroom.dashboard', 'active' => 'homeroom.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.class_officers'), 'route' => 'homeroom.class-officers.index', 'active' => 'homeroom.class-officers.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.students'), 'route' => 'homeroom.students.index', 'active' => 'homeroom.students.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.attendance'), 'route' => 'homeroom.attendance.index', 'active' => 'homeroom.attendance.*', 'icon' => 'ph-calendar-check'],
+            ['label' => __('nav.audits'), 'route' => 'homeroom.audits.index', 'active' => 'homeroom.audits.*', 'icon' => 'ph-notebook'],
         ],
-        4 => [
-            ['label' => 'Dashboard', 'route' => 'guru-piket.dashboard', 'active' => 'guru-piket.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Pengurus kelas', 'route' => 'guru-piket.pengurus-kelas.index', 'active' => 'guru-piket.pengurus-kelas.*', 'icon' => 'ph-users-three'],
-            ['label' => 'Presensi', 'route' => 'guru-piket.presensi.index', 'active' => 'guru-piket.presensi.*', 'icon' => 'ph-calendar-check'],
+        'duty_teacher' => [
+            ['label' => __('nav.dashboard'), 'route' => 'duty-teacher.dashboard', 'active' => 'duty-teacher.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.class_officers'), 'route' => 'duty-teacher.class-officers.index', 'active' => 'duty-teacher.class-officers.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.attendance'), 'route' => 'duty-teacher.attendance.index', 'active' => 'duty-teacher.attendance.*', 'icon' => 'ph-calendar-check'],
         ],
-        5 => [
-            ['label' => 'Dashboard', 'route' => 'guru-bk.dashboard', 'active' => 'guru-bk.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Presensi', 'route' => 'guru-bk.presensi.index', 'active' => 'guru-bk.presensi.*', 'icon' => 'ph-calendar-check'],
+        'counseling_teacher' => [
+            ['label' => __('nav.dashboard'), 'route' => 'counseling.dashboard', 'active' => 'counseling.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.attendance'), 'route' => 'counseling.attendance.index', 'active' => 'counseling.attendance.*', 'icon' => 'ph-calendar-check'],
         ],
-        6 => [
-            ['label' => 'Dashboard', 'route' => 'tata-usaha.dashboard', 'active' => 'tata-usaha.dashboard', 'icon' => 'ph-house'],
-            ['label' => 'Jurusan', 'route' => 'tata-usaha.jurusan.index', 'active' => 'tata-usaha.jurusan.*', 'icon' => 'ph-buildings'],
-            ['label' => 'Kelas', 'route' => 'tata-usaha.kelas.index', 'active' => 'tata-usaha.kelas.*', 'icon' => 'ph-chalkboard', 'params' => ['filter_status' => 'aktif']],
-            ['label' => 'Guru', 'route' => 'tata-usaha.guru.index', 'active' => 'tata-usaha.guru.*', 'icon' => 'ph-users-three'],
-            ['label' => 'Pengurus kelas', 'route' => 'tata-usaha.pengurus-kelas.index', 'active' => 'tata-usaha.pengurus-kelas.*', 'icon' => 'ph-users-three'],
-            ['label' => 'Siswa', 'route' => 'tata-usaha.siswa.index', 'active' => 'tata-usaha.siswa.*', 'icon' => 'ph-users-three', 'params' => ['filter_status' => 'aktif']],
-            ['label' => 'Presensi', 'route' => 'tata-usaha.presensi.index', 'active' => 'tata-usaha.presensi.*', 'icon' => 'ph-calendar-check'],
-            ['label' => 'Logs', 'route' => 'tata-usaha.logs.index', 'active' => 'tata-usaha.logs.*', 'icon' => 'ph-notebook'],
+        'administrator' => [
+            ['label' => __('nav.dashboard'), 'route' => 'administration.dashboard', 'active' => 'administration.dashboard', 'icon' => 'ph-house'],
+            ['label' => __('nav.departments'), 'route' => 'administration.departments.index', 'active' => 'administration.departments.*', 'icon' => 'ph-buildings'],
+            ['label' => __('nav.classrooms'), 'route' => 'administration.classrooms.index', 'active' => 'administration.classrooms.*', 'icon' => 'ph-chalkboard'],
+            ['label' => __('nav.teachers'), 'route' => 'administration.teachers.index', 'active' => 'administration.teachers.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.class_officers'), 'route' => 'administration.class-officers.index', 'active' => 'administration.class-officers.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.students'), 'route' => 'administration.students.index', 'active' => 'administration.students.*', 'icon' => 'ph-users-three'],
+            ['label' => __('nav.attendance'), 'route' => 'administration.attendance.index', 'active' => 'administration.attendance.*', 'icon' => 'ph-calendar-check'],
+            ['label' => __('nav.audits'), 'route' => 'administration.audits.index', 'active' => 'administration.audits.*', 'icon' => 'ph-notebook'],
         ],
         default => [],
     };
-
-
+    $profileName = $profileModel?->name ?? $account->username;
     $initials = strtoupper(substr((string) $profileName, 0, 1));
     $nameParts = preg_split('/\s+/', trim((string) $profileName));
     if (count($nameParts) > 1) {
@@ -85,82 +75,23 @@
     }
 @endphp
 
-<aside class="app-sidebar bg-sidebar text-sidebar-foreground" id="sidebarMenu" aria-label="Primary navigation">
+<aside class="app-sidebar bg-sidebar text-sidebar-foreground" id="sidebarMenu" aria-label="{{ __('accessibility.primary_navigation') }}">
     <div class="sidebar-inner">
-        <a class="sidebar-brand" href="{{ route($dashboardRoute) }}" aria-label="SmartPresensi dashboard">
-            <span class="brand-mark">SP</span>
-            <span class="brand-word">Smart<span>Presensi</span></span>
+        <a class="sidebar-brand" href="{{ route($dashboardRoute) }}" aria-label="{{ __('accessibility.dashboard_brand') }}">
+            <span class="brand-mark">SP</span><span class="brand-word">Smart<span>Presensi</span></span>
         </a>
-
-        <div class="sidebar-account">
-            <a href="{{ $profileUrl }}" class="sidebar-account-link">
-                <span class="avatar avatar--sidebar">
-                    @if ($profilePhoto && $profileDirectory)
-                        <img src="{{ asset($profileDirectory . '/' . $profilePhoto) }}" alt="">
-                    @else
-                        {{ $initials }}
-                    @endif
-                </span>
-                <span class="sidebar-account-copy">
-                    <strong>{{ $profileName }}</strong>
-                    <small>{{ $roleName }}</small>
-                </span>
-            </a>
-        </div>
-
-        <p class="sidebar-label">Menu utama</p>
-        <nav class="sidebar-nav" aria-label="Menu utama">
+        <div class="sidebar-account"><a href="{{ $profileUrl }}" class="sidebar-account-link"><span class="avatar avatar--sidebar">{{ $initials }}</span><span class="sidebar-account-copy"><strong>{{ $profileName }}</strong><small>{{ $roleName }}</small></span></a></div>
+        <p class="sidebar-label">{{ __('nav.primary') }}</p>
+        <nav class="sidebar-nav" aria-label="{{ __('accessibility.primary_navigation') }}">
             @foreach ($navigation as $item)
-                <a href="{{ route($item['route'], $item['params'] ?? []) }}"
-                    class="sidebar-link {{ request()->routeIs($item['active']) ? 'is-active' : '' }}"
-                    @if (request()->routeIs($item['active'])) aria-current="page" @endif>
-                    <i class="ph-bold {{ $item['icon'] ?? 'ph-squares-four' }} sidebar-icon" aria-hidden="true"></i>
-                    <span>{{ $item['label'] }}</span>
-                </a>
+                <a href="{{ route($item['route']) }}" class="sidebar-link {{ request()->routeIs($item['active']) ? 'is-active' : '' }}" @if (request()->routeIs($item['active'])) aria-current="page" @endif><i class="ph-bold {{ $item['icon'] }} sidebar-icon" aria-hidden="true"></i><span>{{ $item['label'] }}</span></a>
             @endforeach
         </nav>
-
-        <div class="sidebar-footer">
-            <span class="sidebar-status-dot"></span>
-            <span>Ruang kerja lokal</span>
-        </div>
+        <div class="sidebar-footer"><span class="sidebar-status-dot"></span><span>{{ __('nav.local_workspace') }}</span></div>
     </div>
 </aside>
-
 <div class="sidebar-backdrop" data-sidebar-close></div>
-
 <header class="app-topbar bg-background">
-    <div class="topbar-left">
-        <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="sidebarMenu"
-            aria-expanded="false" aria-label="Open navigation">
-            <span></span><span></span><span></span>
-        </button>
-        <div class="topbar-context">
-            <span class="topbar-eyebrow">SmartPresensi / {{ $roleName }}</span>
-            <h1>@yield('judul')</h1>
-        </div>
-    </div>
-
-    <div class="topbar-actions">
-        <time class="topbar-date" datetime="{{ now('Asia/Jakarta')->toDateString() }}">{{ now('Asia/Jakarta')->locale('id')->isoFormat('D MMM YYYY') }}</time>
-        <a href="{{ $profileUrl }}" class="topbar-profile" aria-label="Open profile">
-            <span class="avatar avatar--topbar">
-                @if ($profilePhoto && $profileDirectory)
-                    <img src="{{ asset($profileDirectory . '/' . $profilePhoto) }}" alt="">
-                @else
-                    {{ $initials }}
-                @endif
-            </span>
-            <span class="topbar-profile-copy">
-                <strong>{{ $profileName }}</strong>
-                <small>{{ $roleName }}</small>
-            </span>
-        </a>
-        <form action="{{ route('logout') }}" method="POST" class="logout-form">
-            @csrf
-            <button type="submit" class="logout-button">
-                <span>Keluar</span><i class="ph-bold ph-sign-out" aria-hidden="true"></i>
-            </button>
-        </form>
-    </div>
+    <div class="topbar-left"><button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="sidebarMenu" aria-expanded="false" aria-label="{{ __('accessibility.open_navigation') }}"><span></span><span></span><span></span></button><div class="topbar-context"><span class="topbar-eyebrow">SmartPresensi / {{ $roleName }}</span><h1>@yield('title')</h1></div></div>
+    <div class="topbar-actions"><time class="topbar-date" datetime="{{ now('Asia/Jakarta')->toDateString() }}">{{ now('Asia/Jakarta')->locale('id')->isoFormat('D MMM YYYY') }}</time><a href="{{ $profileUrl }}" class="topbar-profile" aria-label="{{ __('accessibility.open_profile') }}"><span class="avatar avatar--topbar">{{ $initials }}</span><span class="topbar-profile-copy"><strong>{{ $profileName }}</strong><small>{{ $roleName }}</small></span></a><form action="{{ route('logout') }}" method="POST" class="logout-form">@csrf<button type="submit" class="logout-button"><span>{{ __('nav.logout') }}</span><i class="ph-bold ph-sign-out" aria-hidden="true"></i></button></form></div>
 </header>

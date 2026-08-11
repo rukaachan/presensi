@@ -15,8 +15,36 @@ concurrency:
 
 jobs:
   check:
+    name: Check (${{ matrix.database }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, mysql]
+    env:
+      APP_ENV: testing
+      APP_URL: http://127.0.0.1
+      DB_CONNECTION: ${{ matrix.database }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: presensi
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: presensi
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
 
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +59,15 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_sqlite
+          extensions: pdo_sqlite, pdo_mysql
           coverage: none
+
+      - name: Configure SQLite database
+        if: matrix.database == 'sqlite'
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+          echo "DB_DATABASE=$GITHUB_WORKSPACE/database/database.sqlite" >> "$GITHUB_ENV"
 
       - name: Find Composer cache
         id: composer-cache
@@ -50,6 +85,25 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Verify populated legacy upgrade
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/presensi-legacy-migrations /tmp/presensi-legacy.sqlite
+          mkdir -p /tmp/presensi-legacy-migrations
+          cp database/migrations/*.php /tmp/presensi-legacy-migrations/
+          rm /tmp/presensi-legacy-migrations/2026_02_22_130000_rename_legacy_contracts_to_english.php
+          if [[ "${{ matrix.database }}" == "sqlite" ]]; then
+            export DB_CONNECTION=sqlite
+            export DB_DATABASE=/tmp/presensi-legacy.sqlite
+            : > "$DB_DATABASE"
+          fi
+          php artisan migrate:fresh --path=/tmp/presensi-legacy-migrations --realpath --force
+          mkdir -p public/presensi_bukti
+          printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' | base64 --decode > public/presensi_bukti/migration.png
+          php tests/Support/load-legacy-fixture.php
+          php artisan migrate --force
+          php tests/Support/verify-legacy-upgrade.php
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4

@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $code
+ * @property string $label
+ * @property string $kind
+ * @property bool $required
+ * @property bool $active
+ */
 class AttendanceSession extends Model
 {
     use HasFactory;
@@ -16,7 +23,6 @@ class AttendanceSession extends Model
         'code',
         'label',
         'kind',
-        'legacy_code',
         'required',
         'active',
         'window_start',

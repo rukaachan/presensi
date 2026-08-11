@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property int $student_id
+ * @property int $attendance_session_id
+ * @property \Illuminate\Support\Carbon $event_date
+ * @property AttendanceState $state
+ * @property string|null $proposed_status
+ * @property-read Student|null $student
+ * @property-read AttendanceSession|null $session
+ */
 class AttendanceEvent extends Model
 {
     use HasFactory;
@@ -28,8 +37,8 @@ class AttendanceEvent extends Model
         'reviewed_by',
         'reviewed_at',
         'idempotency_key',
-        'legacy_validasi_id',
-        'legacy_presensi_id',
+        'source_event_id',
+        'source_attendance_id',
     ];
 
     protected function casts(): array
@@ -44,7 +53,7 @@ class AttendanceEvent extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'student_id', 'id_siswa');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 
     public function session(): BelongsTo
@@ -54,12 +63,12 @@ class AttendanceEvent extends Model
 
     public function observedBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'observed_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'observed_by');
     }
 
     public function reviewedBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'reviewed_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'reviewed_by');
     }
 
     public function scopeForDate(Builder $query, Carbon|string $date): Builder

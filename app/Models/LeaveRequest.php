@@ -25,7 +25,7 @@ class LeaveRequest extends Model
         'reviewed_by',
         'reviewed_at',
         'decision_note',
-        'legacy_surat_presensi_id',
+        'source_letter_id',
     ];
 
     protected function casts(): array
@@ -38,7 +38,7 @@ class LeaveRequest extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'student_id', 'id_siswa');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 
     public function attendanceRecord(): BelongsTo
@@ -48,12 +48,12 @@ class LeaveRequest extends Model
 
     public function submittedBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'submitted_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'submitted_by');
     }
 
     public function reviewedBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'reviewed_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'reviewed_by');
     }
 
     public function scopePending(Builder $query): Builder

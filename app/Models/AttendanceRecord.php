@@ -10,6 +10,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property int $student_id
+ * @property int $attendance_session_id
+ * @property \Illuminate\Support\Carbon $attendance_date
+ * @property AttendanceState $state
+ * @property string|null $evidence_path
+ * @property string|null $notes
+ * @property-read Student|null $student
+ * @property-read AttendanceSession|null $session
+ */
 class AttendanceRecord extends Model
 {
     use HasFactory;
@@ -33,7 +43,7 @@ class AttendanceRecord extends Model
         'created_by',
         'updated_by',
         'idempotency_key',
-        'legacy_presensi_id',
+        'source_record_id',
     ];
 
     protected function casts(): array
@@ -49,7 +59,7 @@ class AttendanceRecord extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'student_id', 'id_siswa');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 
     public function session(): BelongsTo
@@ -59,12 +69,12 @@ class AttendanceRecord extends Model
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'created_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'created_by');
     }
 
     public function updatedBy(): BelongsTo
     {
-        return $this->belongsTo(Akun::class, 'updated_by', 'id_akun');
+        return $this->belongsTo(Account::class, 'updated_by');
     }
 
     public function leaveRequests(): HasMany

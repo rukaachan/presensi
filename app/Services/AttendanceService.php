@@ -5,11 +5,10 @@ namespace App\Services;
 use App\Authorization\AttendanceScope;
 use App\Authorization\RoleCode;
 use App\Domain\Attendance\AttendanceState;
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceRecord;
-use App\Models\PresensiSiswa;
-use App\Models\Siswa;
+use App\Models\Student;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -21,9 +20,7 @@ use LogicException;
 
 class AttendanceService
 {
-    /**
-     * @var array<string, list<string>>
-     */
+    /** @var array<string, list<string>> */
     private const TRANSITIONS = [
         'submitted' => ['confirmed', 'needs_review', 'rejected', 'excused', 'absent'],
         'needs_review' => ['confirmed', 'rejected', 'excused', 'absent'],
@@ -37,19 +34,18 @@ class AttendanceService
         private AttendanceSessionCatalog $sessionCatalog,
         private AttendanceScope $scope,
         private AuditEventService $auditEvents,
-        private LegacyAttendanceAdapter $legacyStatuses,
         private DatabaseManager $database,
     ) {}
 
-    public function recordDailyCheckIn(Akun $actor, Siswa $student, array $attributes = []): AttendanceRecord
+    public function recordDailyCheckIn(Account $actor, Student $student, array $attributes = []): AttendanceRecord
     {
         if (! $this->scope->canSubmitFor($actor, $student)) {
-            throw new AuthorizationException('The actor cannot submit attendance for this student.');
+            throw new AuthorizationException(__('attendance.errors.unauthorized_submit'));
         }
 
         $session = $this->sessionCatalog->required();
         if ($session === null) {
-            throw new LogicException('The required daily attendance session is not configured.');
+            throw new LogicException(__('attendance.errors.required_session_missing'));
         }
 
         $now = CarbonImmutable::now($this->timezone());
@@ -75,11 +71,11 @@ class AttendanceService
                         'state' => AttendanceState::SUBMITTED,
                         'late' => (bool) ($attributes['late'] ?? false),
                         'captured_at' => $capturedAt,
-                        'evidence_disk' => $attributes['evidence_disk'] ?? null,
-                        'evidence_path' => $attributes['evidence_path'] ?? null,
-                        'evidence_hash' => $attributes['evidence_hash'] ?? null,
-                        'evidence_mime' => $attributes['evidence_mime'] ?? null,
-                        'evidence_bytes' => $attributes['evidence_bytes'] ?? null,
+                        'evidence_disk' => $attributes['evidence_disk'] ?? $attributes['disk'] ?? null,
+                        'evidence_path' => $attributes['evidence_path'] ?? $attributes['path'] ?? null,
+                        'evidence_hash' => $attributes['evidence_hash'] ?? $attributes['hash'] ?? null,
+                        'evidence_mime' => $attributes['evidence_mime'] ?? $attributes['mime'] ?? null,
+                        'evidence_bytes' => $attributes['evidence_bytes'] ?? $attributes['bytes'] ?? null,
                         'notes' => $attributes['notes'] ?? null,
                         'source' => $attributes['source'] ?? $this->sourceFor($actor),
                         'created_by' => $actor->getKey(),
@@ -100,10 +96,7 @@ class AttendanceService
                     'attendance.submitted',
                     $record,
                     $actor,
-                    after: [
-                        'state' => AttendanceState::SUBMITTED->value,
-                        'attendance_date' => $date,
-                    ],
+                    after: ['state' => AttendanceState::SUBMITTED->value, 'attendance_date' => $date],
                     metadata: ['source' => $record->source],
                 );
             }
@@ -112,19 +105,15 @@ class AttendanceService
         });
     }
 
-    public function recordOptionalEvent(
-        Akun $actor,
-        Siswa $student,
-        string $sessionCode,
-        array $attributes = [],
-    ): AttendanceEvent {
+    public function recordOptionalEvent(Account $actor, Student $student, string $sessionCode, array $attributes = []): AttendanceEvent
+    {
         if (! $this->scope->canObserve($actor, $student)) {
-            throw new AuthorizationException('The actor cannot observe an event for this student.');
+            throw new AuthorizationException(__('attendance.errors.unauthorized_observe'));
         }
 
         $session = $this->sessionCatalog->active()->firstWhere('code', $sessionCode);
         if ($session === null || $session->required) {
-            throw new InvalidArgumentException('The event session is not an active optional session.');
+            throw new InvalidArgumentException(__('attendance.errors.optional_session_inactive'));
         }
 
         $now = CarbonImmutable::now($this->timezone());
@@ -181,15 +170,10 @@ class AttendanceService
         });
     }
 
-    public function suggestOptionalEvent(
-        Akun $actor,
-        Siswa $student,
-        string $sessionCode,
-        string $proposedStatus,
-        array $attributes = [],
-    ): AttendanceEvent {
-        if (! in_array($proposedStatus, ['hadir', 'izin', 'alpha', 'pulang'], true)) {
-            throw new InvalidArgumentException('The suggested attendance status is invalid.');
+    public function suggestOptionalEvent(Account $actor, Student $student, string $sessionCode, string $proposedStatus, array $attributes = []): AttendanceEvent
+    {
+        if (! in_array($proposedStatus, ['confirmed', 'excused', 'absent', 'checked_out'], true)) {
+            throw new InvalidArgumentException(__('attendance.errors.invalid_suggested_status'));
         }
 
         $event = $this->recordOptionalEvent(
@@ -198,8 +182,7 @@ class AttendanceService
             $sessionCode,
             [...$attributes, 'proposed_status' => $proposedStatus],
         );
-        $currentProposal = $event->getAttribute('proposed_status');
-        if ($currentProposal !== $proposedStatus) {
+        if ($event->getAttribute('proposed_status') !== $proposedStatus) {
             $event->update(['proposed_status' => $proposedStatus]);
             $this->auditEvents->record(
                 'attendance.event_suggested',
@@ -212,28 +195,14 @@ class AttendanceService
         return $event->refresh();
     }
 
-    public function transitionRecord(
-        Akun $actor,
-        AttendanceRecord $record,
-        AttendanceState $targetState,
-        ?string $reason = null,
-    ): AttendanceRecord {
+    public function transitionRecord(Account $actor, AttendanceRecord $record, AttendanceState $targetState, ?string $reason = null): AttendanceRecord
+    {
         if (! $this->scope->canReview($actor, $record)) {
-            throw new AuthorizationException('The actor cannot review this attendance record.');
+            throw new AuthorizationException(__('attendance.errors.unauthorized_record_review'));
         }
 
-        $stateAttribute = $record->getAttribute('state');
-        $currentState = $stateAttribute instanceof AttendanceState
-            ? $stateAttribute
-            : AttendanceState::from((string) $stateAttribute);
-        $allowed = self::TRANSITIONS[$currentState->value];
-        if (! in_array($targetState->value, $allowed, true)) {
-            throw new InvalidArgumentException("Cannot transition attendance from {$currentState->value} to {$targetState->value}.");
-        }
-
-        if ($targetState === AttendanceState::REJECTED && blank($reason)) {
-            throw new InvalidArgumentException('A rejection reason is required.');
-        }
+        $currentState = $this->stateOf($record->getAttribute('state'));
+        $this->assertTransition($currentState, $targetState, $reason);
 
         return $this->database->transaction(function () use ($actor, $record, $currentState, $targetState, $reason): AttendanceRecord {
             $record->update([
@@ -241,7 +210,6 @@ class AttendanceService
                 'notes' => $reason ?: $record->notes,
                 'updated_by' => $actor->getKey(),
             ]);
-
             $this->auditEvents->record(
                 'attendance.state_changed',
                 $record,
@@ -255,28 +223,14 @@ class AttendanceService
         });
     }
 
-    public function transitionEvent(
-        Akun $actor,
-        AttendanceEvent $event,
-        AttendanceState $targetState,
-        ?string $reason = null,
-    ): AttendanceEvent {
+    public function transitionEvent(Account $actor, AttendanceEvent $event, AttendanceState $targetState, ?string $reason = null): AttendanceEvent
+    {
         if (! $this->scope->canReviewEvent($actor, $event)) {
-            throw new AuthorizationException('The actor cannot review this attendance event.');
+            throw new AuthorizationException(__('attendance.errors.unauthorized_event_review'));
         }
 
-        $stateAttribute = $event->getAttribute('state');
-        $currentState = $stateAttribute instanceof AttendanceState
-            ? $stateAttribute
-            : AttendanceState::from((string) $stateAttribute);
-        $allowed = self::TRANSITIONS[$currentState->value];
-        if (! in_array($targetState->value, $allowed, true)) {
-            throw new InvalidArgumentException("Cannot transition attendance event from {$currentState->value} to {$targetState->value}.");
-        }
-
-        if ($targetState === AttendanceState::REJECTED && blank($reason)) {
-            throw new InvalidArgumentException('A rejection reason is required.');
-        }
+        $currentState = $this->stateOf($event->getAttribute('state'));
+        $this->assertTransition($currentState, $targetState, $reason);
 
         return $this->database->transaction(function () use ($actor, $event, $currentState, $targetState, $reason): AttendanceEvent {
             $event->update([
@@ -285,7 +239,6 @@ class AttendanceService
                 'reviewed_at' => now($this->timezone()),
                 'notes' => $reason ?: $event->notes,
             ]);
-
             $this->auditEvents->record(
                 'attendance.event_state_changed',
                 $event,
@@ -299,38 +252,28 @@ class AttendanceService
         });
     }
 
-    public function correctRecord(
-        Akun $actor,
-        AttendanceRecord $record,
-        AttendanceState $targetState,
-        string $reason,
-        array $attributes = [],
-    ): AttendanceRecord {
+    public function correctRecord(Account $actor, AttendanceRecord $record, AttendanceState $targetState, string $reason, array $attributes = []): AttendanceRecord
+    {
         if (! $this->scope->canReview($actor, $record)) {
-            throw new AuthorizationException('The actor cannot correct this attendance record.');
+            throw new AuthorizationException(__('attendance.errors.unauthorized_record_correction'));
         }
-
         if (blank($reason)) {
-            throw new InvalidArgumentException('A correction reason is required.');
+            throw new InvalidArgumentException(__('attendance.errors.correction_reason_required'));
         }
 
-        $currentAttribute = $record->getAttribute('state');
-        $currentState = $currentAttribute instanceof AttendanceState
-            ? $currentAttribute
-            : AttendanceState::from((string) $currentAttribute);
+        $currentState = $this->stateOf($record->getAttribute('state'));
 
         return $this->database->transaction(function () use ($actor, $record, $currentState, $targetState, $reason, $attributes): AttendanceRecord {
             $record->update(array_filter([
                 'state' => $targetState,
                 'notes' => $reason,
                 'updated_by' => $actor->getKey(),
-                'evidence_disk' => $attributes['evidence_disk'] ?? null,
-                'evidence_path' => $attributes['evidence_path'] ?? null,
-                'evidence_hash' => $attributes['evidence_hash'] ?? null,
-                'evidence_mime' => $attributes['evidence_mime'] ?? null,
-                'evidence_bytes' => $attributes['evidence_bytes'] ?? null,
+                'evidence_disk' => $attributes['evidence_disk'] ?? $attributes['disk'] ?? null,
+                'evidence_path' => $attributes['evidence_path'] ?? $attributes['path'] ?? null,
+                'evidence_hash' => $attributes['evidence_hash'] ?? $attributes['hash'] ?? null,
+                'evidence_mime' => $attributes['evidence_mime'] ?? $attributes['mime'] ?? null,
+                'evidence_bytes' => $attributes['evidence_bytes'] ?? $attributes['bytes'] ?? null,
             ], static fn (mixed $value): bool => $value !== null));
-
             $this->auditEvents->record(
                 'attendance.corrected',
                 $record,
@@ -344,82 +287,22 @@ class AttendanceService
         });
     }
 
-    public function synchronizeLegacyRecord(
-        Akun $actor,
-        PresensiSiswa $legacy,
-        string $legacyStatus,
-        string $reason,
-        array $attributes = [],
-    ): AttendanceRecord {
-        $student = $legacy->siswa()->first();
-        if (! $student instanceof Siswa) {
-            throw new InvalidArgumentException('The legacy attendance record has no student.');
+    private function assertTransition(AttendanceState $current, AttendanceState $target, ?string $reason): void
+    {
+        if (! in_array($target->value, self::TRANSITIONS[$current->value], true)) {
+            throw new InvalidArgumentException(__('attendance.errors.invalid_transition', [
+                'current' => __('attendance.'.$current->value),
+                'target' => __('attendance.'.$target->value),
+            ]));
         }
-
-        if (! $this->scope->canViewStudent($actor, $student)) {
-            throw new AuthorizationException('The actor cannot synchronize this attendance record.');
+        if ($target === AttendanceState::REJECTED && blank($reason)) {
+            throw new InvalidArgumentException(__('attendance.errors.rejection_reason_required'));
         }
+    }
 
-        $session = $this->sessionCatalog->required();
-        if ($session === null) {
-            throw new LogicException('The required daily attendance session is not configured.');
-        }
-
-        $date = $this->dateValue($legacy->getRawOriginal('tanggal'));
-        $targetState = AttendanceState::from($this->legacyStatuses->reviewStateFromAttendanceStatus($legacyStatus));
-        $record = AttendanceRecord::query()
-            ->where('legacy_presensi_id', $legacy->getKey())
-            ->first()
-            ?? AttendanceRecord::query()
-                ->where('student_id', $student->getKey())
-                ->where('attendance_session_id', $session->getKey())
-                ->whereDate('attendance_date', $date)
-                ->first();
-
-        if ($record === null) {
-            $record = $this->database->transaction(function () use ($actor, $legacy, $student, $session, $date, $targetState, $attributes): AttendanceRecord {
-                $record = AttendanceRecord::query()->create([
-                    'student_id' => $student->getKey(),
-                    'attendance_session_id' => $session->getKey(),
-                    'attendance_date' => $date,
-                    'state' => $targetState,
-                    'captured_at' => $this->timestampValue($legacy->getRawOriginal('jam_masuk') === null
-                        ? now($this->timezone())
-                        : sprintf('%s %s', $date, $legacy->getRawOriginal('jam_masuk'))),
-                    'evidence_disk' => $attributes['evidence_disk'] ?? null,
-                    'evidence_path' => $attributes['evidence_path'] ?? null,
-                    'evidence_hash' => $attributes['evidence_hash'] ?? null,
-                    'evidence_mime' => $attributes['evidence_mime'] ?? null,
-                    'evidence_bytes' => $attributes['evidence_bytes'] ?? null,
-                    'notes' => $legacy->getAttribute('keterangan'),
-                    'source' => 'legacy_compatibility',
-                    'created_by' => $actor->getKey(),
-                    'updated_by' => $actor->getKey(),
-                    'idempotency_key' => 'legacy-presensi:'.$legacy->getKey(),
-                    'legacy_presensi_id' => $legacy->getKey(),
-                ]);
-
-                $this->auditEvents->record(
-                    'attendance.legacy_synchronized',
-                    $record,
-                    $actor,
-                    after: ['state' => $targetState->value],
-                    metadata: ['legacy_presensi_id' => $legacy->getKey()],
-                );
-
-                return $record;
-            });
-        } else {
-            $currentAttribute = $record->getAttribute('state');
-            $currentState = $currentAttribute instanceof AttendanceState
-                ? $currentAttribute
-                : AttendanceState::from((string) $currentAttribute);
-            if ($currentState !== $targetState) {
-                $record = $this->correctRecord($actor, $record, $targetState, $reason, $attributes);
-            }
-        }
-
-        return $record->refresh();
+    private function stateOf(mixed $state): AttendanceState
+    {
+        return $state instanceof AttendanceState ? $state : AttendanceState::from((string) $state);
     }
 
     private function dateValue(mixed $value): string
@@ -429,14 +312,12 @@ class AttendanceService
 
     private function timestampValue(mixed $value): Carbon
     {
-        if ($value instanceof DateTimeInterface) {
-            return Carbon::instance($value);
-        }
-
-        return Carbon::parse((string) $value, $this->timezone());
+        return $value instanceof DateTimeInterface
+            ? Carbon::instance($value)
+            : Carbon::parse((string) $value, $this->timezone());
     }
 
-    private function sourceFor(Akun $actor): string
+    private function sourceFor(Account $actor): string
     {
         return match (RoleCode::forAccount($actor)) {
             RoleCode::STUDENT => 'student',
@@ -444,7 +325,7 @@ class AttendanceService
             RoleCode::DUTY_TEACHER => 'duty_teacher',
             RoleCode::HOMEROOM_TEACHER => 'homeroom_teacher',
             RoleCode::COUNSELING_TEACHER => 'counseling_teacher',
-            RoleCode::ADMINISTRATION => 'admin',
+            RoleCode::ADMINISTRATION => 'administrator',
             default => 'authorized',
         };
     }

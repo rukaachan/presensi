@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceSession;
-use App\Models\Siswa;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +17,7 @@ class AttendanceEventFactory extends Factory
     public function definition(): array
     {
         return [
-            'student_id' => Siswa::factory(),
+            'student_id' => Student::factory(),
             'attendance_session_id' => AttendanceSession::factory(),
             'event_date' => fake()->date(),
             'state' => 'submitted',
@@ -29,8 +29,8 @@ class AttendanceEventFactory extends Factory
             'reviewed_by' => null,
             'reviewed_at' => null,
             'idempotency_key' => null,
-            'legacy_validasi_id' => null,
-            'legacy_presensi_id' => null,
+            'source_event_id' => null,
+            'source_attendance_id' => null,
         ];
     }
 }

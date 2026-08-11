@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Kelas;
-use App\Models\PengurusKelas;
-use App\Models\Siswa;
+use App\Models\ClassOfficer;
+use App\Models\Classroom;
+use App\Models\Student;
 use Carbon\Carbon;
 use Database\Seeders\Support\DemoSeeder;
 
@@ -26,41 +26,41 @@ class StudentSeeder extends DemoSeeder
         $academicYear = Carbon::now('Asia/Jakarta')->year;
         $sequence = 0;
 
-        foreach (Kelas::query()->orderBy('id_kelas')->get() as $class) {
+        foreach (Classroom::query()->orderBy('id')->get() as $classroom) {
             for ($slot = 1; $slot <= 3; $slot++) {
                 $sequence++;
                 $isOfficer = $slot === 1;
                 $username = match ($sequence) {
-                    1 => 'pengurus.demo',
-                    2 => 'siswa.demo',
+                    1 => 'officer.demo',
+                    2 => 'student.demo',
                     default => $isOfficer
-                        ? sprintf('pengurus.%03d', $sequence)
-                        : sprintf('siswa.%03d', $sequence),
+                        ? sprintf('officer.%03d', $sequence)
+                        : sprintf('student.%03d', $sequence),
                 };
-                $roleName = $isOfficer ? 'Pengurus Kelas' : 'Siswa';
-                $account = $this->account($username, $roleName);
-                $student = Siswa::query()->updateOrCreate(
-                    ['id_akun' => $account->getKey()],
+                $roleCode = $isOfficer ? 'class_officer' : 'student';
+                $account = $this->account($username, $roleCode);
+                $student = Student::query()->updateOrCreate(
+                    ['account_id' => $account->getKey()],
                     [
-                        'id_kelas' => $class->getKey(),
-                        'nis' => 260000 + $sequence,
-                        'nama_siswa' => $names[$sequence - 1],
-                        'nomer_hp' => sprintf('08120000%04d', $sequence),
-                        'jenis_kelamin' => $sequence % 2 === 0 ? 'perempuan' : 'laki-laki',
-                        'angkatan' => $academicYear,
-                        'status_siswa' => 'aktif',
-                        'status_jabatan' => $isOfficer ? 'ketua_kelas' : 'siswa',
-                        'foto_siswa' => 'siswa.jpg',
-                        'pembuat' => $this->creator(),
+                        'classroom_id' => $classroom->getKey(),
+                        'student_number' => 260000 + $sequence,
+                        'name' => $names[$sequence - 1],
+                        'phone' => sprintf('08120000%04d', $sequence),
+                        'gender' => $sequence % 2 === 0 ? 'female' : 'male',
+                        'admission_year' => $academicYear,
+                        'status' => 'active',
+                        'position' => $isOfficer ? 'class_president' : 'student',
+                        'photo_path' => 'student.jpg',
+                        'created_by_label' => $this->creator(),
                     ],
                 );
 
                 if ($isOfficer) {
-                    PengurusKelas::query()->updateOrCreate(
-                        ['id_siswa' => $student->getKey()],
+                    ClassOfficer::query()->updateOrCreate(
+                        ['student_id' => $student->getKey()],
                         [
-                            'jabatan' => 'Pengurus Kelas',
-                            'pembuat' => $this->creator(),
+                            'position' => 'class_officer',
+                            'created_by_label' => $this->creator(),
                         ],
                     );
                 }

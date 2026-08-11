@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\LeaveRequest;
-use App\Models\Siswa;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,7 +16,7 @@ class LeaveRequestFactory extends Factory
     public function definition(): array
     {
         return [
-            'student_id' => Siswa::factory(),
+            'student_id' => Student::factory(),
             'attendance_record_id' => null,
             'state' => 'submitted',
             'reason' => fake()->sentence(8),
@@ -26,7 +26,7 @@ class LeaveRequestFactory extends Factory
             'reviewed_by' => null,
             'reviewed_at' => null,
             'decision_note' => null,
-            'legacy_surat_presensi_id' => null,
+            'source_letter_id' => null,
         ];
     }
 }

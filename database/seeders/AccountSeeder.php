@@ -9,14 +9,14 @@ class AccountSeeder extends DemoSeeder
     public function run(): void
     {
         foreach ([
-            ['tu.demo', 'Tata Usaha'],
-            ['wali.demo', 'Wali Kelas'],
-            ['piket.demo', 'Guru Piket'],
-            ['bk.demo', 'Guru BK'],
-            ['siswa.demo', 'Siswa'],
-            ['pengurus.demo', 'Pengurus Kelas'],
-        ] as [$username, $roleName]) {
-            $this->account($username, $roleName);
+            ['administrator.demo', 'administrator'],
+            ['homeroom.demo', 'homeroom_teacher'],
+            ['duty.demo', 'duty_teacher'],
+            ['counseling.demo', 'counseling_teacher'],
+            ['student.demo', 'student'],
+            ['officer.demo', 'class_officer'],
+        ] as [$username, $roleCode]) {
+            $this->account($username, $roleCode);
         }
     }
 }

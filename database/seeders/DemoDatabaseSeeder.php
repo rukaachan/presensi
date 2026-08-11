@@ -20,7 +20,7 @@ class DemoDatabaseSeeder extends Seeder
             AcademicSeeder::class,
             StudentSeeder::class,
             AttendanceSeeder::class,
-            \Database\Seeders\Support\LegacyLogSeeder::class,
+            \Database\Seeders\Support\AuditFixtureSeeder::class,
         ]);
     }
 }

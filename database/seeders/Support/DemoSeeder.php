@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\Support;
 
-use App\Models\Akun;
+use App\Models\Account;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -10,25 +10,23 @@ use RuntimeException;
 
 abstract class DemoSeeder extends Seeder
 {
-    protected function account(string $username, string $roleName): Akun
+    protected function account(string $username, string $roleCode): Account
     {
-        return Akun::query()->updateOrCreate(
+        return Account::query()->updateOrCreate(
             ['username' => $username],
             [
-                'id_role' => $this->roleId($roleName),
+                'role_id' => $this->roleId($roleCode),
                 'password' => Hash::make($this->password()),
             ],
         );
     }
 
-    protected function roleId(string $roleName): int
+    protected function roleId(string $roleCode): int
     {
-        $roleId = Role::query()
-            ->where('nama_role', $roleName)
-            ->value('id_role');
+        $roleId = Role::query()->where('code', $roleCode)->value('id');
 
         if ($roleId === null) {
-            throw new RuntimeException("Role [{$roleName}] must be seeded before demo data.");
+            throw new RuntimeException("Role [{$roleCode}] must be seeded before demo data.");
         }
 
         return (int) $roleId;
