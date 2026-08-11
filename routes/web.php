@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceEvidenceController;
 use App\Http\Controllers\GuruBkController;
 use App\Http\Controllers\GuruPiketController;
 use App\Http\Controllers\OtentikasiController;
@@ -32,6 +33,9 @@ Route::post('/', [OtentikasiController::class, 'authenticated']);
 Route::post('/logout', [OtentikasiController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
+
+    Route::get('attendance/evidence/{attendanceRecord}', [AttendanceEvidenceController::class, 'show'])
+        ->name('attendance.evidence');
 
     Route::prefix('tata-usaha')->middleware('akses:6')->group(function () {
         // DASHBOARD

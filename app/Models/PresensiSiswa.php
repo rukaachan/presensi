@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class PresensiSiswa extends Model
@@ -50,6 +51,11 @@ class PresensiSiswa extends Model
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class, 'id_siswa', 'id_siswa');
+    }
+
+    public function attendanceRecord(): HasOne
+    {
+        return $this->hasOne(AttendanceRecord::class, 'legacy_presensi_id', 'id_presensi');
     }
 
     public function validasis(): HasMany

@@ -5,12 +5,13 @@ namespace App\Services;
 use App\Models\PresensiSiswa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class PresensiFilterService
 {
     public function buildBaseQuery(PresensiSiswa $presensi): Builder
     {
-        return $presensi
+        $query = $presensi
             ->join('siswa', 'siswa.id_siswa', '=', 'presensi_siswa.id_siswa')
             ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
             ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
@@ -26,6 +27,19 @@ class PresensiFilterService
                 'presensi_siswa.foto_bukti',
                 'presensi_siswa.keterangan'
             );
+
+        if (Schema::hasTable('attendance_records')) {
+            $query
+                ->leftJoin('attendance_records', 'attendance_records.legacy_presensi_id', '=', 'presensi_siswa.id_presensi')
+                ->addSelect(
+                    'attendance_records.id as attendance_record_id',
+                    'attendance_records.evidence_disk',
+                    'attendance_records.evidence_path',
+                    'attendance_records.evidence_mime',
+                );
+        }
+
+        return $query;
     }
 
     public function filter(Request $request, Builder $query, bool $usePagination = true, array $options = [])

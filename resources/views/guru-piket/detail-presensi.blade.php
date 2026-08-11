@@ -142,11 +142,7 @@
                     </div>
                     <div class="row">
                         <div class="col-sm">
-                            @if ($presensi->foto_bukti && file_exists(public_path('presensi_bukti/' . $presensi->foto_bukti)))
-                                <img src="{{ asset('presensi_bukti/' . $presensi->foto_bukti) }}" class="evidence-preview" alt="Bukti presensi {{ $presensi->nama_siswa }}">
-                            @else
-                                <span class="evidence-placeholder"><i class="ph-bold ph-image-square" aria-hidden="true"></i> Bukti tidak tersedia</span>
-                            @endif
+                            @include('layout.partials.attendance-evidence', ['record' => $presensi, 'alt' => 'Bukti presensi '.$presensi->nama_siswa])
                         </div>
                     </div>
                 </div>

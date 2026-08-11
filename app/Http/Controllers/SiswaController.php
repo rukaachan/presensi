@@ -3,17 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePresensiRequest;
+use App\Models\AttendanceRecord;
 use App\Models\PengurusKelas;
 use App\Models\PresensiSiswa;
 use App\Models\Siswa;
+use App\Services\AttendanceEvidenceStorage;
+use App\Services\AttendanceService;
+use App\Services\AttendanceSessionCatalog;
+use App\Services\LegacyAttendanceWriteAdapter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Throwable;
 
 class SiswaController extends Controller
 {
+    public function __construct(
+        private AttendanceService $attendanceService,
+        private AttendanceEvidenceStorage $evidenceStorage,
+        private AttendanceSessionCatalog $sessionCatalog,
+        private LegacyAttendanceWriteAdapter $legacyAttendance,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -67,11 +79,19 @@ class SiswaController extends Controller
 
         abort_unless($siswa !== null, 403);
 
-        $exists = PresensiSiswa::where('id_siswa', $siswa->id_siswa)
-            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+        $timezone = (string) config('attendance.timezone', 'Asia/Jakarta');
+        $date = now($timezone)->toDateString();
+        $legacyExists = PresensiSiswa::where('id_siswa', $siswa->id_siswa)
+            ->whereDate('tanggal', $date)
+            ->exists();
+        $session = $this->sessionCatalog->required();
+        $targetExists = $session !== null && AttendanceRecord::query()
+            ->where('student_id', $siswa->getKey())
+            ->where('attendance_session_id', $session->getKey())
+            ->whereDate('attendance_date', $date)
             ->exists();
 
-        return response()->json(['exists' => $exists]);
+        return response()->json(['exists' => $legacyExists || $targetExists]);
     }
 
     public function openCam(Siswa $siswa)
@@ -92,51 +112,61 @@ class SiswaController extends Controller
             return back()->withInput()->with('error', 'Data siswa tidak ditemukan.');
         }
 
+        $timezone = (string) config('attendance.timezone', 'Asia/Jakarta');
+        $date = now($timezone)->toDateString();
         if (PresensiSiswa::where('id_siswa', $siswa->id_siswa)
-            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+            ->whereDate('tanggal', $date)
             ->exists()) {
             return back()->withInput()->with('error', 'Presensi untuk hari ini sudah tercatat.');
         }
 
         $image = $request->input('image');
-        if (! is_string($image) || ! preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $image)) {
+        if (! is_string($image)) {
             return back()->withInput()->with('error', 'Format gambar tidak valid.');
         }
 
-        [, $imageData] = explode(';base64,', $image, 2);
+        $evidence = null;
+        try {
+            $evidence = $this->evidenceStorage->storeDataUri($image);
+            DB::transaction(function () use ($siswa, $evidence, $timezone, $date): void {
+                $record = $this->attendanceService->recordDailyCheckIn(
+                    Auth::user(),
+                    $siswa,
+                    [
+                        'attendance_date' => $date,
+                        'captured_at' => now($timezone),
+                        'evidence_disk' => $evidence['disk'],
+                        'evidence_path' => $evidence['path'],
+                        'evidence_hash' => $evidence['hash'],
+                        'evidence_mime' => $evidence['mime'],
+                        'evidence_bytes' => $evidence['bytes'],
+                        'notes' => 'Presensi melalui kamera',
+                        'source' => 'student',
+                    ],
+                );
 
-        $maxImageSizeBytes = 2 * 1024 * 1024;
-        $padding = str_ends_with($imageData, '==') ? 2 : (str_ends_with($imageData, '=') ? 1 : 0);
-        $estimatedSize = (int) floor((strlen($imageData) * 3) / 4) - $padding;
+                $legacy = $this->legacyAttendance->createDailyCapture(
+                    $siswa,
+                    now($timezone),
+                    'hadir',
+                    'Presensi melalui kamera',
+                    'Siswa',
+                );
+                $this->legacyAttendance->link($record, $legacy);
+            });
+        } catch (Throwable $exception) {
+            if ($evidence !== null) {
+                $this->evidenceStorage->delete($evidence['path'], $evidence['disk']);
+            }
 
-        if ($estimatedSize <= 0 || $estimatedSize > $maxImageSizeBytes) {
-            return back()->withInput()->with('error', 'Ukuran gambar terlalu besar. Maksimal 2MB.');
+            report($exception);
+
+            return back()->withInput()->with('error', 'Presensi gagal disimpan. Silakan coba lagi.');
         }
-
-        $imageBase64 = base64_decode($imageData, true);
-        if ($imageBase64 === false || strlen($imageBase64) > $maxImageSizeBytes) {
-            return back()->withInput()->with('error', 'Data gambar tidak valid.');
-        }
-
-        $folderPath = 'presensi_bukti';
-        $fileName = Str::uuid().'.png';
-        $filePath = public_path("$folderPath/$fileName");
-
-        file_put_contents($filePath, $imageBase64);
-
-        PresensiSiswa::create([
-            'id_siswa' => $siswa->id_siswa,
-            'foto_bukti' => $fileName,
-            'jam_masuk' => now('Asia/Jakarta')->format('H:i:s'),
-            'tanggal' => now('Asia/Jakarta')->toDateString(),
-            'status_kehadiran' => 'hadir',
-            'keterangan' => 'Presensi melalui kamera',
-            'pembuat' => 'Siswa',
-        ]);
 
         session(['snapshot_taken' => true]);
 
-        return back()->with('success', 'Image uploaded successfully');
+        return back()->with('success', 'Presensi berhasil dikirim untuk ditinjau.');
     }
 
     public function showHistori(Request $request, PresensiSiswa $presensi)

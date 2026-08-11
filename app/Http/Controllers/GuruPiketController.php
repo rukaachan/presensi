@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AttendanceRecord;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\PengurusKelas;
 use App\Models\PresensiSiswa;
 use App\Models\Role;
+use App\Services\AttendanceEvidenceStorage;
+use App\Services\AttendanceService;
 use App\Services\PresensiFilterService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class GuruPiketController extends Controller
 {
-    public function __construct(private PresensiFilterService $presensiFilterService) {}
+    public function __construct(
+        private PresensiFilterService $presensiFilterService,
+        private AttendanceService $attendanceService,
+        private AttendanceEvidenceStorage $evidenceStorage,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -113,7 +121,14 @@ class GuruPiketController extends Controller
                 ->join('siswa', 'siswa.id_siswa', '=', 'presensi_siswa.id_siswa')
                 ->join('kelas', 'siswa.id_kelas', '=', 'kelas.id_kelas')
                 ->join('jurusan', 'kelas.id_jurusan', '=', 'jurusan.id_jurusan')
-                ->where('id_presensi', $request->id)->first(),
+                ->leftJoin('attendance_records', 'attendance_records.legacy_presensi_id', '=', 'presensi_siswa.id_presensi')
+                ->addSelect(
+                    'attendance_records.id as attendance_record_id',
+                    'attendance_records.evidence_disk',
+                    'attendance_records.evidence_path',
+                    'attendance_records.evidence_mime',
+                )
+                ->where('presensi_siswa.id_presensi', $request->id)->first(),
         ];
 
         return view('guru-piket.detail-presensi', $data);
@@ -133,44 +148,71 @@ class GuruPiketController extends Controller
 
     public function updatePresensi(Request $request, Role $role, PresensiSiswa $presensi)
     {
-        $id_presensi = $request->input('id_presensi');
-
+        $idPresensi = $request->input('id_presensi');
         $data = $request->validate([
-            'status_kehadiran' => 'required',
-            'keterangan' => 'required',
-            'foto_bukti' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status_kehadiran' => ['required', 'in:hadir,izin,alpha'],
+            'keterangan' => ['required', 'string', 'max:2000'],
+            'foto_bukti' => ['sometimes', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
 
         $user = Auth::user();
-        $role_akun = $role->where('id_role', $user->id_role)->first('nama_role');
-        $data['pembuat'] = $role_akun->nama_role;
-        if ($id_presensi !== null) {
-            if ($request->hasFile('foto_bukti') && $request->file('foto_bukti')->isValid()) {
-                $foto_file = $request->file('foto_bukti');
-                $foto_extension = $foto_file->getClientOriginalExtension();
-                $foto_nama = md5($foto_file->getClientOriginalName().time()).'.'.$foto_extension;
-                $foto_file->move(public_path('presensi_bukti'), $foto_nama);
-
-                $update_data = $presensi->where('id_presensi', $id_presensi)->first();
-                $old_file_path = public_path('presensi_bukti').'/'.$update_data->foto_bukti;
-
-                if (file_exists($old_file_path)) {
-                    unlink($old_file_path);
-                }
-
-                $data['foto_bukti'] = $foto_nama;
-            }
-
-            $dataUpdate = $presensi->where('id_presensi', $id_presensi)->update($data);
-
-            if ($dataUpdate) {
-                notify()->success('Data presensi siswa telah diperbarui', 'Success');
-
-                return redirect('guru-piket/presensi');
-            }
+        $legacy = $idPresensi === null
+            ? null
+            : $presensi->where('id_presensi', $idPresensi)->first();
+        if ($legacy === null) {
+            return back()->with('error', 'Data presensi tidak ditemukan.');
         }
 
-        return back()->with('error', 'Data gagal diperbarui');
+        $existingRecord = AttendanceRecord::query()
+            ->where('legacy_presensi_id', $legacy->getKey())
+            ->first();
+        $oldEvidence = $existingRecord === null ? null : [
+            'disk' => $existingRecord->evidence_disk,
+            'path' => $existingRecord->evidence_path,
+        ];
+        $evidence = null;
+
+        try {
+            if ($request->hasFile('foto_bukti')) {
+                $evidence = $this->evidenceStorage->storeUploadedFile($request->file('foto_bukti'));
+            }
+
+            DB::transaction(function () use ($user, $role, $legacy, $data, $evidence): void {
+                $roleLabel = $role->where('id_role', $user->id_role)->value('nama_role') ?: 'Guru Piket';
+                $legacy->update([
+                    'status_kehadiran' => $data['status_kehadiran'],
+                    'keterangan' => $data['keterangan'],
+                    'pembuat' => $roleLabel,
+                    ...(isset($evidence) ? ['foto_bukti' => ''] : []),
+                ]);
+
+                $this->attendanceService->synchronizeLegacyRecord(
+                    $user,
+                    $legacy->refresh(),
+                    $data['status_kehadiran'],
+                    $data['keterangan'],
+                    $evidence ?? [],
+                );
+            });
+        } catch (Throwable $exception) {
+            if ($evidence !== null) {
+                $this->evidenceStorage->delete($evidence['path'], $evidence['disk']);
+            }
+
+            report($exception);
+
+            return back()->withInput()->with('error', 'Data gagal diperbarui.');
+        }
+
+        if ($evidence !== null && $oldEvidence !== null
+            && $oldEvidence['path'] !== null
+            && $oldEvidence['path'] !== $evidence['path']) {
+            $this->evidenceStorage->delete($oldEvidence['path'], $oldEvidence['disk']);
+        }
+
+        notify()->success('Data presensi siswa telah diperbarui', 'Success');
+
+        return redirect('guru-piket/presensi');
     }
 
     public function exportPresensi(Request $request, PresensiSiswa $presensi)

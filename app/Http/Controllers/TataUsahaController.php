@@ -10,7 +10,7 @@ class TataUsahaController extends Controller
     public function index()
     {
         $ttlSeconds = 120;
-        $operationalDate = now('Asia/Jakarta');
+        $operationalDate = now((string) config('attendance.timezone', 'Asia/Jakarta'));
         $date = $operationalDate->toDateString();
 
         $dailyStats = Cache::remember("dashboard:tata-usaha:daily:{$date}:v1", $ttlSeconds, function () use ($date) {

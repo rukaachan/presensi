@@ -1,15 +1,24 @@
 # Presensi Berbasis Foto
 
-Web-based school attendance system using photo evidence, role-based access control, validation workflows, and PDF reporting. The local development setup uses SQLite; MySQL remains supported for deployments that need the original database routines.
+Web-based school attendance system using photo evidence, role-based access control, validation workflows, and PDF reporting. The local development setup uses SQLite; MySQL remains supported through portable Laravel services and constraints.
 
 ## Features
 
-- Photo attendance with duplicate-submission checks
+- Photo attendance with idempotent duplicate protection and private evidence storage
 - Attendance history and status summaries
 - Class-officer attendance validation
 - Student, teacher, class, department, and account management
 - Attendance filtering and PDF exports
-- Activity logs and role-restricted routes
+- Append-only audit events, compatibility activity logs, and role-restricted routes
+
+## Attendance policy
+
+- Every student has one required daily check-in.
+- Optional session events (breaks, check-out, or special schedules) are configurable and do not block the daily check-in.
+- The default catalog keeps the three legacy break validation codes for route and data compatibility.
+- Attendance dates and operational windows use `ATTENDANCE_TIMEZONE` (default: `Asia/Jakarta`).
+- The state, permission, correction, and retention contract is documented in [`docs/attendance-policy.md`](docs/attendance-policy.md).
+- The legacy migration design is documented in [`docs/attendance-migration.md`](docs/attendance-migration.md).
 
 ## Roles
 
@@ -106,5 +115,6 @@ GitHub Actions runs the same quality gate and frontend build for pull requests a
 - Configure HTTPS before enabling camera attendance for remote users.
 - Back up the database and uploaded attendance evidence before deployment or migration.
 - The integrity migration adds unique constraints; audit duplicate legacy profile links before applying it. For a throwaway local database, use `php artisan migrate:fresh --seed`.
-- SQLite skips MySQL-only stored procedures and functions; teacher creation uses the application transaction path instead.
+- Legacy triggers, procedures, and functions are deprecated and removed by migration; teacher and attendance workflows use portable application transaction paths instead.
+- Attendance evidence is stored on the configured private disk (`ATTENDANCE_EVIDENCE_DISK`, default `local`) and served only through an authorized route.
 - Production seeding runs reference data only. Do not run `DemoDatabaseSeeder` against production.

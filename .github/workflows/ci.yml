@@ -20,6 +20,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Check whitespace
+        run: git diff --check HEAD^
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -38,6 +44,9 @@ jobs:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
+
+      - name: Validate Composer manifest
+        run: composer validate --strict --no-check-publish
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -62,6 +71,3 @@ jobs:
 
       - name: Run PHP quality gate
         run: composer check
-
-      - name: Check whitespace
-        run: git diff --check

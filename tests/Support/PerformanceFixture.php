@@ -109,6 +109,21 @@ class PerformanceFixture
             $table->string('waktu_validasi');
         });
 
+        Schema::create('attendance_sessions', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('label');
+            $table->string('kind');
+            $table->string('legacy_code')->nullable();
+            $table->boolean('required')->default(false);
+            $table->boolean('active')->default(true);
+            $table->time('window_start')->nullable();
+            $table->time('window_end')->nullable();
+            $table->unsignedInteger('sort_order')->default(0);
+            $table->json('settings')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('logs', function (Blueprint $table): void {
             $table->id('id_log');
             $table->string('tabel')->nullable();
@@ -147,6 +162,57 @@ class PerformanceFixture
             ['id_role' => 4, 'nama_role' => 'Guru Piket'],
             ['id_role' => 5, 'nama_role' => 'Guru BK'],
             ['id_role' => 6, 'nama_role' => 'Tata Usaha'],
+        ]);
+
+        DB::table('attendance_sessions')->insert([
+            [
+                'code' => 'daily_check_in',
+                'label' => 'Check-in harian',
+                'kind' => 'check_in',
+                'legacy_code' => null,
+                'required' => true,
+                'active' => true,
+                'sort_order' => 10,
+                'settings' => json_encode(['evidence' => 'photo']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'code' => 'break_1',
+                'label' => 'Istirahat pertama',
+                'kind' => 'break',
+                'legacy_code' => 'istirahat_pertama',
+                'required' => false,
+                'active' => true,
+                'sort_order' => 20,
+                'settings' => json_encode(['evidence' => 'optional']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'code' => 'break_2',
+                'label' => 'Istirahat kedua',
+                'kind' => 'break',
+                'legacy_code' => 'istirahat_kedua',
+                'required' => false,
+                'active' => true,
+                'sort_order' => 30,
+                'settings' => json_encode(['evidence' => 'optional']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'code' => 'break_3',
+                'label' => 'Istirahat ketiga',
+                'kind' => 'break',
+                'legacy_code' => 'istirahat_ketiga',
+                'required' => false,
+                'active' => true,
+                'sort_order' => 40,
+                'settings' => json_encode(['evidence' => 'optional']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
         $accounts = [];

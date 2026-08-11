@@ -3,18 +3,31 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePresensiRequest;
+use App\Models\AttendanceRecord;
 use App\Models\PengurusKelas;
 use App\Models\PresensiSiswa;
 use App\Models\Siswa;
 use App\Models\Validasi;
+use App\Services\AttendanceEvidenceStorage;
+use App\Services\AttendanceService;
+use App\Services\AttendanceSessionCatalog;
+use App\Services\LegacyAttendanceWriteAdapter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Throwable;
 
 class PengurusKelasController extends Controller
 {
+    public function __construct(
+        private AttendanceSessionCatalog $attendanceSessionCatalog,
+        private AttendanceService $attendanceService,
+        private AttendanceEvidenceStorage $evidenceStorage,
+        private LegacyAttendanceWriteAdapter $legacyAttendance,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -84,11 +97,19 @@ class PengurusKelasController extends Controller
 
         abort_unless($pengurus !== null && $target !== null, 403);
 
-        $exists = PresensiSiswa::where('id_siswa', $target->id_siswa)
-            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+        $timezone = (string) config('attendance.timezone', 'Asia/Jakarta');
+        $date = now($timezone)->toDateString();
+        $legacyExists = PresensiSiswa::where('id_siswa', $target->id_siswa)
+            ->whereDate('tanggal', $date)
+            ->exists();
+        $session = $this->attendanceSessionCatalog->required();
+        $targetExists = $session !== null && AttendanceRecord::query()
+            ->where('student_id', $target->getKey())
+            ->where('attendance_session_id', $session->getKey())
+            ->whereDate('attendance_date', $date)
             ->exists();
 
-        return response()->json(['exists' => $exists]);
+        return response()->json(['exists' => $legacyExists || $targetExists]);
     }
 
     public function showKelas(Request $request, Siswa $siswa, Validasi $validasi)
@@ -99,19 +120,25 @@ class PengurusKelasController extends Controller
             ->where('akun.id_akun', Auth::user()->id_akun)
             ->first();
 
+        $validationSessions = $this->attendanceSessionCatalog->validationSessions();
+        $validationCodes = $this->attendanceSessionCatalog->validationCodes();
+        $selectedValidationCode = $request->input('waktu_validasi') ?: ($validationCodes[0] ?? null);
+
         if ($siswa === null) {
-            return view('pengurus-kelas.kelas', ['data' => collect([])]);
+            return view('pengurus-kelas.kelas', [
+                'data' => collect([]),
+                'validationSessions' => $validationSessions,
+                'selectedValidationCode' => $selectedValidationCode,
+            ]);
         }
 
-        $waktuValidasi = $request->input('waktu_validasi');
+        $filter = $this->getKelasData($siswa, $validasi, $validationCodes);
 
-        $filter = $this->getKelasData($siswa, $validasi, $waktuValidasi);
-
-        if ($filter->isNotEmpty()) {
-            return view('pengurus-kelas.kelas', ['data' => $filter]);
-        }
-
-        return view('pengurus-kelas.kelas', ['data' => collect([])]);
+        return view('pengurus-kelas.kelas', [
+            'data' => $filter,
+            'validationSessions' => $validationSessions,
+            'selectedValidationCode' => $selectedValidationCode,
+        ]);
     }
 
     public function exportKelas(Request $request, PresensiSiswa $presensi, Siswa $siswa, Validasi $validasi)
@@ -126,9 +153,8 @@ class PengurusKelasController extends Controller
             return back()->with('error', 'Profil pengurus belum terhubung dengan kelas.');
         }
 
-        $waktuValidasi = $request->input('waktu_validasi');
-
-        $filter = $this->getKelasData($siswa, $validasi, $waktuValidasi);
+        $validationCodes = $this->attendanceSessionCatalog->validationCodes();
+        $filter = $this->getKelasData($siswa, $validasi, $validationCodes);
 
         // Remove duplicates based on id_presensi
         $filter = collect($filter)->unique('id_presensi')->values()->all();
@@ -138,44 +164,72 @@ class PengurusKelasController extends Controller
         return $pdf->download('kelas.pdf');
     }
 
-    private function getKelasData($siswa, $validasi, $waktuValidasi)
+    /**
+     * @param  list<string>  $validationCodes
+     */
+    private function getKelasData($siswa, $validasi, array $validationCodes)
     {
         return $validasi
             ->join('presensi_siswa', 'validasi.id_presensi', '=', 'presensi_siswa.id_presensi')
             ->join('siswa', 'presensi_siswa.id_siswa', '=', 'siswa.id_siswa')
             ->join('akun', 'siswa.id_akun', '=', 'akun.id_akun')
             ->where('siswa.id_kelas', $siswa->id_kelas)
-            ->where(function ($query) use ($waktuValidasi) {
-                $query->where('validasi.waktu_validasi', $waktuValidasi)
-                    ->orWhere('validasi.waktu_validasi', 'istirahat_pertama')
-                    ->orWhere('validasi.waktu_validasi', 'istirahat_kedua')
-                    ->orWhere('validasi.waktu_validasi', 'istirahat_ketiga');
-            })
+            ->whereIn('validasi.waktu_validasi', $validationCodes)
             ->get();
     }
 
     public function updateValidasi(Request $request)
     {
+        $allowedValidationCodes = $this->attendanceSessionCatalog->validationCodes();
         $request->validate([
-            'waktu_validasi' => 'required',
+            'waktu_validasi' => ['required', Rule::in($allowedValidationCodes)],
+            'status_validasi' => ['required', 'array'],
+            'status_validasi.*' => ['required', 'array'],
+            'status_validasi.*.*' => ['required', Rule::in(['hadir', 'izin', 'alpha', 'pulang'])],
         ]);
 
-        foreach ($request->input('status_validasi') as $index => $statuses) {
-            foreach ($statuses as $status) {
-                $existingValidasi = Validasi::where('id_pengurus', $request->input("id_pengurus.$index"))
-                    ->where('id_presensi', $request->input("id_presensi.$index"))
-                    ->where('waktu_validasi', $request->input('waktu_validasi'))
-                    ->first();
+        $actor = Auth::user();
+        $validationCode = (string) $request->input('waktu_validasi');
+        $session = $this->attendanceSessionCatalog->active()
+            ->firstWhere('legacy_code', $validationCode);
 
-                if ($existingValidasi) {
-                    $existingValidasi->update([
-                        'status_validasi' => $status,
-                    ]);
-                }
+        foreach ($request->input('status_validasi') as $index => $statuses) {
+            $status = is_array($statuses) ? (string) reset($statuses) : (string) $statuses;
+            $legacy = PresensiSiswa::query()
+                ->where('id_presensi', $request->input("id_presensi.$index"))
+                ->first();
+            $student = $legacy?->siswa()->first();
+
+            if ($session === null || $legacy === null || ! $student instanceof Siswa || $status === '') {
+                continue;
+            }
+
+            $this->attendanceService->suggestOptionalEvent(
+                $actor,
+                $student,
+                $session->code,
+                $status,
+                [
+                    'event_date' => $legacy->getRawOriginal('tanggal'),
+                    'observed_at' => now((string) config('attendance.timezone', 'Asia/Jakarta')),
+                    'idempotency_key' => 'validation:'.$legacy->getKey().':'.$session->getKey(),
+                    'notes' => 'Usulan status dari pengurus kelas: '.$status,
+                    'source' => 'class_officer',
+                ],
+            );
+
+            $existingValidasi = Validasi::query()
+                ->where('id_pengurus', $request->input("id_pengurus.$index"))
+                ->where('id_presensi', $legacy->getKey())
+                ->where('waktu_validasi', $validationCode)
+                ->first();
+
+            if ($existingValidasi !== null) {
+                $existingValidasi->update(['status_validasi' => $status]);
             }
         }
 
-        return back()->with('success', 'Data validasi sudah diupdate');
+        return back()->with('success', 'Usulan validasi sudah dikirim untuk ditinjau.');
     }
 
     public function store(StorePresensiRequest $request)
@@ -190,51 +244,62 @@ class PengurusKelasController extends Controller
             return back()->withInput()->with('error', 'Tidak memiliki akses untuk siswa ini.');
         }
 
+        $timezone = (string) config('attendance.timezone', 'Asia/Jakarta');
+        $date = now($timezone)->toDateString();
         if (PresensiSiswa::where('id_siswa', $targetSiswa->id_siswa)
-            ->whereDate('tanggal', now('Asia/Jakarta')->toDateString())
+            ->whereDate('tanggal', $date)
             ->exists()) {
             return back()->withInput()->with('error', 'Presensi untuk hari ini sudah tercatat.');
         }
 
         $image = $request->input('image');
-        if (! is_string($image) || ! preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $image)) {
+        if (! is_string($image)) {
             return back()->withInput()->with('error', 'Format gambar tidak valid.');
         }
 
-        [, $imageData] = explode(';base64,', $image, 2);
+        $actor = Auth::user();
+        $evidence = null;
+        try {
+            $evidence = $this->evidenceStorage->storeDataUri($image);
+            DB::transaction(function () use ($actor, $targetSiswa, $evidence, $timezone, $date): void {
+                $record = $this->attendanceService->recordDailyCheckIn(
+                    $actor,
+                    $targetSiswa,
+                    [
+                        'attendance_date' => $date,
+                        'captured_at' => now($timezone),
+                        'evidence_disk' => $evidence['disk'],
+                        'evidence_path' => $evidence['path'],
+                        'evidence_hash' => $evidence['hash'],
+                        'evidence_mime' => $evidence['mime'],
+                        'evidence_bytes' => $evidence['bytes'],
+                        'notes' => 'Presensi melalui kamera oleh pengurus kelas',
+                        'source' => 'class_officer',
+                    ],
+                );
 
-        $maxImageSizeBytes = 2 * 1024 * 1024;
-        $padding = str_ends_with($imageData, '==') ? 2 : (str_ends_with($imageData, '=') ? 1 : 0);
-        $estimatedSize = (int) floor((strlen($imageData) * 3) / 4) - $padding;
+                $legacy = $this->legacyAttendance->createDailyCapture(
+                    $targetSiswa,
+                    now($timezone),
+                    'hadir',
+                    'Presensi melalui kamera oleh pengurus kelas',
+                    'Pengurus Kelas',
+                );
+                $this->legacyAttendance->link($record, $legacy);
+            });
+        } catch (Throwable $exception) {
+            if ($evidence !== null) {
+                $this->evidenceStorage->delete($evidence['path'], $evidence['disk']);
+            }
 
-        if ($estimatedSize <= 0 || $estimatedSize > $maxImageSizeBytes) {
-            return back()->withInput()->with('error', 'Ukuran gambar terlalu besar. Maksimal 2MB.');
+            report($exception);
+
+            return back()->withInput()->with('error', 'Presensi gagal disimpan. Silakan coba lagi.');
         }
-
-        $imageBase64 = base64_decode($imageData, true);
-        if ($imageBase64 === false || strlen($imageBase64) > $maxImageSizeBytes) {
-            return back()->withInput()->with('error', 'Data gambar tidak valid.');
-        }
-
-        $folderPath = 'presensi_bukti';
-        $fileName = Str::uuid().'.png';
-        $filePath = public_path("$folderPath/$fileName");
-
-        file_put_contents($filePath, $imageBase64);
-        PresensiSiswa::create([
-            'id_siswa' => $targetSiswa->id_siswa,
-            'foto_bukti' => $fileName,
-            'jam_masuk' => now('Asia/Jakarta')->format('H:i:s'),
-            'tanggal' => now('Asia/Jakarta')->toDateString(),
-            'status_kehadiran' => 'hadir',
-            'keterangan' => 'Presensi melalui kamera',
-            'pembuat' => 'Siswa',
-
-        ]);
 
         session(['snapshot_taken' => true]);
 
-        return back()->with('success', 'Image uploaded successfully');
+        return back()->with('success', 'Presensi berhasil dikirim untuk ditinjau.');
     }
 
     public function showHistori(Request $request, PresensiSiswa $presensi)
